@@ -1,0 +1,49 @@
+---
+output:
+  rmarkdown::github_document
+---
+
+# VAX-PASC sim
+
+Longitudinal Simulation of the effect of vaccine timing on Long Covid (PASC). 
+
+## Assumptions
+
+* time-varying covid and vax are a function of time since last covid or vax
+* time-varying pasc is a counting process. new cases are a function of time between last vax and last covid
+
+## Data Dictionary
+
+* `obs_month` is a binary indicator of any visits occuring in a given month
+
+## Modifications
+
+### 11/1/23
+
+
+  
+* Changed race and data type to factors
+* Added vax brand data to both basline (as counts) and time varying (as indicators)
+* Made metformin a point indicator variable rather than a counting process variable
+* Modified the sim to increase the probabilities of events:
+```{r get_probs, echo=FALSE, cache=FALSE}
+library(data.table)
+load("gendata.Rdata")
+
+
+final_pasc_prob <- colMeans(final[,node_list$Y,with=FALSE])
+final_death_prob <- colMeans(final[,tail(node_list$C,1),with=FALSE])
+
+# covid probs
+covid_nodes <- grep("covid", names(final), value = TRUE)
+month_covid_prob <- mean(colMeans(final[,covid_nodes[-1],with=FALSE]))
+
+# vax probs
+vax_nodes <- grep("t_.*_vax$", names(final), value = TRUE)
+month_vax_prob <- mean(colMeans(final[,vax_nodes[-1],with=FALSE]))
+probs <- data.frame(month_covid_prob, month_vax_prob, 
+final_pasc_prob, final_death_prob, row.names= NULL)
+print(probs)
+```
+
+* Changed imputation strategy to 0's for everything but the counting processes (death and covid)
