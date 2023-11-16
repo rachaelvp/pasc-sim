@@ -1,0 +1,5 @@
+library(tmle3sim)
+library(data.table)
+results <- load_results()
+formatted <- format_results(results)
+results <- as.data.table(formatted)

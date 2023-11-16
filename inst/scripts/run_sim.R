@@ -1,0 +1,10 @@
+library(future)
+devtools::load_all()
+options(future.globals.onReference = "error")
+plan("multisession", workers = 8)
+
+params <- list(n = 1e3)
+sim_spec <- make_spec(PascSim,params = params)
+est_spec <- make_spec(pascLtmle, params = c())
+reporter <- ps_Reporter$new(params = c())
+run_sims(sim_spec, est_spec, reporter, n_runs = 100)
