@@ -37,7 +37,8 @@ pascLtmle <- R6Class(
       intervention_days <- c(0, (seq_len(n_A-2)-1) * 30 + 6)
       summary.measures = array(intervention_days, c(n_A-1, 1, 1))
       dimnames(summary.measures)[2]=list("vax_lag")
-      fit <- ltmleMSM(data,
+
+      fit <- try({ltmleMSM(data,
                       Anodes = nodes$A,
                       Cnodes = nodes$C,
                       Lnodes = nodes$L,
@@ -46,7 +47,13 @@ pascLtmle <- R6Class(
                       regimes = regimes,
                       working.msm = "Y ~ vax_lag",
                       summary.measures = summary.measures
-                      )
+                      )})
+
+      if(inherits(fit,"try-error")){
+
+        results <- data.frame(regime = "error", period = as.character(fit), mean = NA, se = NA)
+        return(results)
+      }
 
       # manually calc TSMs
       g <- fit$cum.g
