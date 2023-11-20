@@ -15,12 +15,13 @@ ps_Reporter <- R6Class("ps_Reporter",
                          },
                          make_final = function(){
                            result <- super$make_final()
+                           result$n <- self$n
                            return(result)
                          }
                        ),
                        active = list(
                          n = function(){
-                           return(private$.n)
+                           return(reporter$simulation$n)
                          }
                        ),
                        private = list(
