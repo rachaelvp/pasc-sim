@@ -319,7 +319,7 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
 
   node_list <-list (W = Wnodes, A = Anodes, L=Lnodes, Y=Ynodes, C=Cnodes)
 
-  result <- list(final = final, obs_tv = obs_tv, node_list = node_list)
+  result <- list(final = final, obs_tv = obs_tv, node_list = node_list, study_tv = study_tv)
 
   return(result)
 }
