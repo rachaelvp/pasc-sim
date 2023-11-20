@@ -81,7 +81,7 @@ generate_tv_init <- function(baseline_covariates){
 
   # TODO: maybe remove these if not full:
   tv_covariates[,last_vax:=0]
-  tv_covariates[,last_covid:=NA]
+  tv_covariates[,last_covid:=-999]
   tv_covariates[,vax_count:=1]
   tv_covariates[,time_since_exposure:=time - pmax(last_vax, last_covid, na.rm = TRUE)]
   tv_covariates[,covid_lag:=pmax(last_covid-last_vax, 0, na.rm = TRUE)]
@@ -242,6 +242,7 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
   # only keep weeks where visits occurred and death has not yet occurred
   if(full){
     obs_tv <- tv
+    obs_tv[,visit:=1]
   } else {
     obs_tv <- tv[visit==1]
   }
@@ -252,6 +253,12 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
   expected_tv <- merge(expected_periods, obs_tv, by=c("id", "period"), all.x = TRUE)
   tv_covars <- c("covid", "vax", vax_names, "pasc", "metformin", "paxlovid", "death")
 
+  latent_covars <- c("last_vax", "last_covid", "vax_count", "time_since_exposure",
+                     "covid_lag")
+
+  if(full){
+    tv_covars <- c(tv_covars, latent_covars)
+  }
   max_or_na <- function(x){
     suppressWarnings(m <- max(x, na.rm = TRUE))
     ifelse(!is.finite(m), NA_real_, m)
@@ -268,9 +275,12 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
 
   # we want to do locf for counting processes
   imp_locf_covars <- c("pasc","death")
+
+  if(full){
+    imp_locf_covars <- c(imp_locf_covars, latent_covars)
+  }
   # all other vars we just impute 0's
   imp_zero_covars <- setdiff(tv_covars, imp_locf_covars)
-
   period_tv_locf <- period_tv[, na.locf(.SD), by=list(id), .SDcols=c("period", "obs_period", imp_locf_covars)]
   period_tv_zero <- period_tv[, na.fill0(.SD, 0), by=list(id), .SDcols=c("period", "obs_period", imp_zero_covars)]
   study_tv <- merge(period_tv_zero, period_tv_locf, by=c("id","period","obs_period"))
