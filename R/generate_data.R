@@ -100,7 +100,7 @@ generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime
   tv_covariates[,p_covid:=plogis(-10+time_since_exposure/30)]
   if(limit_covid){
     # limit to 1 covid case
-    tv_covariates[!is.na(last_covid), p_covid:=0]
+    tv_covariates[(last_covid>0), p_covid:=0]
   }
   if(!is.na(regime)){
     tv_covariates[,covid:=as.numeric(regime==time)]
