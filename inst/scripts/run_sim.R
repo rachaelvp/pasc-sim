@@ -18,13 +18,18 @@ sim_spec2 <- make_spec(PascSim,params = params)
 params <- list(n = 1e5, effect_size=0.1)
 sim_spec3 <- make_spec(PascSim,params = params)
 sim_specs <- list(sim_spec, sim_spec2, sim_spec3)
-
+if(cores==4){
+  sim_specs <- sim_spec
+  n_runs <- cores*2
+} else {
+  n_runs <- 1e3
+}
 # define est and reporter
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())
 
 # run the sims
-results = run_sims(sim_spec, est_spec, reporter, n_runs = 1e2)
+results = run_sims(sim_spec, est_spec, reporter, n_runs = n_runs)
 save(results, file = "results.Rdata")
 
 # factory <- function(sim_spec, est_spec, reporter){
