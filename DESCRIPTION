@@ -15,10 +15,14 @@ Imports: R6,
          zoo,
          truncnorm,
          foreach,
-         ltmle
+         ltmle,
+         stremr,
+         future,
+         future.callr
 Remotes:
     github::tlverse/tmle3sim,
     github::tlverse/hal9001,
+    github::https://github.com/osofr/stremr
 RoxygenNote: 7.2.3
 Suggests: 
     testthat (>= 3.0.0)
