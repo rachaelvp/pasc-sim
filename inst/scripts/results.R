@@ -8,7 +8,7 @@ setnames(psi_0, c("mean","se"), c("psi_0", "se(psi_0)"))
 
 results <- load_results()
 results <- rbindlist(results)
-results <- merge( results, psi_0, by = c("period","regime", "effect_size"))
+results <- merge( results, psi_0, by = c("period","regime","effect_size"))
 
 results <- results[!is.na(mean)&!is.na(se)]
 results[,bias:=mean-psi_0]

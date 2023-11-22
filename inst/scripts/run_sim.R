@@ -12,7 +12,7 @@ params <- list(n = 1e3, effect_size=0.1)
 sim_spec <- make_spec(PascSim,params = params)
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())
-results = run_sims(sim_spec, est_spec, reporter, n_runs = 100)
+results = run_sims(sim_spec, est_spec, reporter, n_runs = 1e3)
 save(results, file = "results.Rdata")
 
 # factory <- function(sim_spec, est_spec, reporter){
