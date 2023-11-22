@@ -29,7 +29,7 @@ est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())
 
 # run the sims
-results = run_sims(sim_spec, est_spec, reporter, n_runs = n_runs)
+results = run_sims(sim_specs, est_spec, reporter, n_runs = n_runs)
 save(results, file = "results.Rdata")
 
 # factory <- function(sim_spec, est_spec, reporter){
