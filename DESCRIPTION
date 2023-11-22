@@ -16,7 +16,7 @@ Imports: R6,
          truncnorm,
          foreach,
          ltmle,
-         sl3
+         sl3,
          stremr,
          future,
          future.callr
