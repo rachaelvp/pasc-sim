@@ -4,7 +4,9 @@ library(future)
 devtools::load_all()
 options(future.apply.debug=TRUE)
 options(future.globals.onReference = "ignore")
-plan(future.callr::callr, workers = 8)
+cores <- parallelly::availableCores()/2
+cores <- min(cores, 32)
+plan(future.callr::callr, workers = cores)
 
 params <- list(n = 1e3, effect_size=0.1)
 sim_spec <- make_spec(PascSim,params = params)
