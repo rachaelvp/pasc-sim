@@ -22,6 +22,9 @@ ps_Reporter <- R6Class("ps_Reporter",
                        active = list(
                          n = function(){
                            return(reporter$simulation$n)
+                         },
+                         effect_size = function(){
+                           return(reporter$simulation$effect_size)
                          }
                        ),
                        private = list(

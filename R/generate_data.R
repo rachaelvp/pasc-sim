@@ -91,7 +91,7 @@ generate_tv_init <- function(baseline_covariates){
 }
 
 #' @rdname dgd
-generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime = NA, limit_covid = TRUE){
+generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime = NA, limit_covid = TRUE, effect_size){
   tv_covariates <- copy(current_tv)
   n <- nrow(tv_covariates)
   tv_covariates[,time:=new_time]
@@ -149,7 +149,7 @@ generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime
   #tv_covariates[,covid_lag:=pmax(last_covid-last_vax, 0, na.rm = TRUE)]
   # only consider index vax
   tv_covariates[,covid_lag:=pmax(last_covid, 0, na.rm = TRUE)]
-  tv_covariates[,p_pasc:=plogis(-18 + covid_lag/30 - 2*metformin - 3*paxlovid)]
+  tv_covariates[,p_pasc:=plogis(-18 + effect_size * covid_lag - 2*metformin - 3*paxlovid)]
   tv_covariates[last_covid<30,p_pasc:=0]
 
   #only generate pasc if last_covid is at least a month ago
@@ -178,7 +178,7 @@ generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime
 
 #' @rdname dgd
 generate_tv_all <- function(baseline_covariates, regime,
-                            time_increment, end_time, limit_covid){
+                            time_increment, end_time, limit_covid, effect_size){
 
 
   time <- 0
@@ -193,7 +193,7 @@ generate_tv_all <- function(baseline_covariates, regime,
     if(time>end_time){
       break
     }
-    current_tv <- generate_tv_single(baseline_covariates, current_tv, time, regime, limit_covid)
+    current_tv <- generate_tv_single(baseline_covariates, current_tv, time, regime, limit_covid, effect_size)
     all_tv <- c(all_tv, list(current_tv))
   }
 
@@ -208,7 +208,7 @@ combine_p_val <- function(x){
 }
 
 #' @rdname dgd
-generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, ...){
+generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, effect_size = 1/30, ...){
   baseline_covariates <- generate_baseline(n)
   baseline_obs <- copy(baseline_covariates)
 
@@ -219,7 +219,7 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
 
 
 
-  tv <- generate_tv_all(baseline_covariates, regime, time_increment, end_time, limit_covid)
+  tv <- generate_tv_all(baseline_covariates, regime, time_increment, end_time, limit_covid, effect_size)
 
 
 
@@ -310,7 +310,7 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
   # define nodes
   Wnodes <- setdiff(names(baseline_covariates), c("id","baseline_metformin","visit_rate"))
 
-  covid_nodes <- grep("covid", obs_nodes, value = TRUE)
+  covid_nodes <- grep("t_[[:digit:]]+_covid$", obs_nodes, value = TRUE)
 
   # drop final covid node
   covid_nodes <- covid_nodes[!grepl(outcome_period, covid_nodes)]
@@ -319,8 +319,8 @@ generate_data <- function(n, full = TRUE, include_p = TRUE, regime = NA, time_in
   final_obs <- grep(sprintf('%s.*%s', outcome_period, "obs_period"), obs_nodes, value = TRUE)
   Anodes <- c(covid_nodes, final_obs)
 
-  L_vars <- setdiff(tv_covars,c("covid","pasc","death"))
-  L_regex <- paste("t_.*",L_vars, collapse = "|", sep="")
+  L_vars <- setdiff(tv_covars,c(latent_covars,"covid","pasc","death"))
+  L_regex <- paste("t_[[:digit:]]+_",L_vars, "$",collapse = "|", sep="")
   Lnodes <- grep(L_regex, obs_nodes, value = TRUE)
 
   Ynodes <- grep(sprintf('%s.*%s', outcome_period, "pasc"), obs_nodes, value = TRUE)

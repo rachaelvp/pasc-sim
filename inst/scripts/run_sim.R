@@ -6,7 +6,7 @@ options(future.apply.debug=TRUE)
 options(future.globals.onReference = "ignore")
 plan(future.callr::callr, workers = 8)
 
-params <- list(n = 1e3)
+params <- list(n = 1e3, effect_size=0.1)
 sim_spec <- make_spec(PascSim,params = params)
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())

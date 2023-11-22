@@ -21,6 +21,9 @@ PascSim <- R6Class("PascSim",
                    active = list(
                      n = function(){
                        return(self$params$n)
+                     },
+                     effect_size = function(){
+                       return(self$params$effect_size)
                      }
                    )
 
