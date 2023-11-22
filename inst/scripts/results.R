@@ -3,7 +3,7 @@ library(data.table)
 library(ggplot2)
 devtools::load_all()
 
-psi_0 <- calc_psi_0()
+psi_0 <- calc_psi_0(effect_size=0.1)
 setnames(psi_0, c("mean","se"), c("psi_0", "se(psi_0)"))
 
 results <- load_results()

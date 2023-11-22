@@ -335,7 +335,7 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
 }
 
 # TODO: maybe this becomes an estimator
-calc_psi_0 <- function(n = 1e3){
+calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
   data_1 <- generate_data(1)
   period_times <- data_1$obs_tv[,c("time","period")]
@@ -355,7 +355,7 @@ calc_psi_0 <- function(n = 1e3){
     post_intervention_min <- int_time + 30
     post_intervention_max <- int_time + 30*6
 
-    int_data <- generate_data(n, full = TRUE, include_p = TRUE, regime = int_time)
+    int_data <- generate_data(n, full = TRUE, include_p = TRUE, regime = int_time, effect_size = effect_size)
     final_p <- int_data$obs_tv[period==final_period,list(p=combine_p_val(p_pasc), period = "final"),by=id]
     post_p <- int_data$obs_tv[between(time, int_time + 30, int_time+30*6),list(p=combine_p_val(p_pasc), period = "post"),by=id]
     all_p <- int_data$obs_tv[,list(p=combine_p_val(p_pasc), period = "all"),by=id]
