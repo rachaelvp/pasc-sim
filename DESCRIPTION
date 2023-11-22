@@ -16,12 +16,14 @@ Imports: R6,
          truncnorm,
          foreach,
          ltmle,
+         sl3
          stremr,
          future,
          future.callr
 Remotes:
     github::tlverse/tmle3sim,
     github::tlverse/hal9001,
+    github::tlverse/sl3@devel,
     github::https://github.com/osofr/stremr
 RoxygenNote: 7.2.3
 Suggests: 
