@@ -1,2 +1,5 @@
 ^pascsim\.Rproj$
 ^\.Rproj\.user$
+Results
+Logs
+simlog.txt
