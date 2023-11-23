@@ -4,8 +4,8 @@
 #' @import ltmle
 #' @importFrom digest digest
 #' @importFrom R6 R6Class
-pascStemr <- R6Class(
-  "pascStremr",
+pascSummary <- R6Class(
+  "pascSummary",
   inherit = t3s_Estimator,
   lock_objects = FALSE,
   public = list(
@@ -15,9 +15,11 @@ pascStemr <- R6Class(
 
     ###START
     estimate = function() {
+      n <- self$simulation$n
+      sampled_data <- self$simulation$last_sample
 
-      stop("Stremr not yet implemented")
-
+      result <- calc_summary(sampled_data)
+      return(result)
     }
   )
 )

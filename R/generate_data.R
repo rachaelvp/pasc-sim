@@ -334,10 +334,21 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   return(result)
 }
 
-# TODO: maybe this becomes an estimator
+calc_summary <- function(data){
+  study_tv <- data$study_tv
+  to_summarize <- c("covid","pasc","death","vax","metformin","paxlovid")
+  summaries <- study_tv[,lapply(.SD, mean), by=list(period), .SDcols=to_summarize]
+  summaries[,regime:=c(0, (seq_len(16-1)-1) * 30 + 6)]
+  long <- melt(summaries, id="regime", measure=to_summarize, variable.name = "period", value.name="mean")
+  long[,se:=mean*(1-mean)/sqrt(n)]
+
+  return(long)
+}
+
 calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
   data_1 <- generate_data(1)
+  summary <- calc_summary(data_1)
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time
 
@@ -377,7 +388,7 @@ calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   all_msm <- glm(p~regime, results[period=="all"], family=quasibinomial())
   all_beta <- data.frame(regime = "msm", period = "all", summary(all_msm)$coefficients[2, 1:2, drop = FALSE])
 
-  psi_0 <- rbind(tsms, final_beta, post_beta, all_beta, use.names = FALSE)
-
+  psi_0 <- rbind(tsms, final_beta, post_beta, all_beta, summary, use.names = FALSE)
+  psi_0[,effect_size:=effect_size]
   return(psi_0)
 }
