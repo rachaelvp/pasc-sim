@@ -1,5 +1,5 @@
 library(future)
-
+library(data.table)
 
 devtools::load_all()
 options(future.apply.debug=TRUE)

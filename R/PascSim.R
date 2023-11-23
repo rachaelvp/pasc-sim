@@ -12,6 +12,7 @@ PascSim <- R6Class("PascSim",
                       },
 
                       sample = function(){
+                          setDTthreads(1)
                           data <- do.call(generate_data, self$params)
 
                           return(data)
