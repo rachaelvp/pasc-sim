@@ -19,7 +19,9 @@ Imports: R6,
          sl3,
          stremr,
          future,
-         future.callr
+         future.callr,
+         dplyr,
+         glmnet
 Remotes:
     github::tlverse/tmle3sim,
     github::tlverse/hal9001,

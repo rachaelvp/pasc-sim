@@ -9,37 +9,37 @@ PASC Sim Reporting
 PASC Sim Reporting
 }
 \section{Super class}{
-\code{tmle3sim::t3s_Reporter} -> \code{ps_Reporter}
+\code{\link[tmle3sim:t3s_Reporter]{tmle3sim::t3s_Reporter}} -> \code{ps_Reporter}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-ps_Reporter-new}{\code{ps_Reporter$new()}}
-\item \href{#method-ps_Reporter-report}{\code{ps_Reporter$report()}}
-\item \href{#method-ps_Reporter-make_final}{\code{ps_Reporter$make_final()}}
-\item \href{#method-ps_Reporter-clone}{\code{ps_Reporter$clone()}}
+\item \href{#method-new}{\code{ps_Reporter$new()}}
+\item \href{#method-report}{\code{ps_Reporter$report()}}
+\item \href{#method-make_final}{\code{ps_Reporter$make_final()}}
+\item \href{#method-clone}{\code{ps_Reporter$clone()}}
 }
 }
-\if{html}{\out{
-<details open><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Reporter" data-id="print"><a href='../../tmle3sim/html/t3s_Reporter.html#method-t3s_Reporter-print'><code>tmle3sim::t3s_Reporter$print()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Reporter" data-id="save"><a href='../../tmle3sim/html/t3s_Reporter.html#method-t3s_Reporter-save'><code>tmle3sim::t3s_Reporter$save()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{
+\out{<details open ><summary>Inherited methods</summary>}
+\itemize{
+\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Reporter" data-id="print">}\href{../../tmle3sim/html/t3s_Reporter.html#method-print}{\code{tmle3sim::t3s_Reporter$print()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Reporter" data-id="save">}\href{../../tmle3sim/html/t3s_Reporter.html#method-save}{\code{tmle3sim::t3s_Reporter$save()}}\out{</span>}
+}
+\out{</details>}
+}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ps_Reporter-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ps_Reporter-new}{}}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$new(params, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$new(params = NULL, ...)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ps_Reporter-report"></a>}}
-\if{latex}{\out{\hypertarget{method-ps_Reporter-report}{}}}
+\if{html}{\out{<a id="method-report"></a>}}
+\if{latex}{\out{\hypertarget{method-report}{}}}
 \subsection{Method \code{report()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$report()}\if{html}{\out{</div>}}
@@ -47,8 +47,8 @@ PASC Sim Reporting
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ps_Reporter-make_final"></a>}}
-\if{latex}{\out{\hypertarget{method-ps_Reporter-make_final}{}}}
+\if{html}{\out{<a id="method-make_final"></a>}}
+\if{latex}{\out{\hypertarget{method-make_final}{}}}
 \subsection{Method \code{make_final()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$make_final()}\if{html}{\out{</div>}}
@@ -56,8 +56,8 @@ PASC Sim Reporting
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ps_Reporter-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-ps_Reporter-clone}{}}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

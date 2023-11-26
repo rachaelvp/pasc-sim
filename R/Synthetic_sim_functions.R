@@ -1,5 +1,7 @@
 
-##Created repeated data function
+#' Add history data from previous two timepoints
+# TODO: replace dplyr with data.table calls so we aren't mixing things up
+#' @import dplyr
 repeated_data<-function(long_data,pseudo){
       temp<-long_data%>%left_join(long_data,join_by(id==id))
       temp1<-temp%>%filter(period.x==(period.y+1))
@@ -35,7 +37,15 @@ repeated_data<-function(long_data,pseudo){
 
 
 
-##DGP estimation
+#' DGP estimation
+#' Notes on how to generalize:
+#' * assume time ordering of columns
+#' * identify baseline covariates
+#' * identify tv covariates
+#' * generate lagged data
+#' * fit models to all history (use sl3)
+#'
+#' @import glmnet
 DGP_estimation<-function(sim_result){
       final<-sim_result$final
       study_tv<-sim_result$study_tv
@@ -112,6 +122,8 @@ DGP_estimation<-function(sim_result){
       #Logistic glmnet
       if(!full){
         visit_fit<-cv.glmnet(x=as.matrix(visit_data%>%select(-obs_period.x)),y=visit_data$obs_period.x, family = "binomial")
+      } else{
+        visit_fit <- NULL
       }
       covid_fit<-cv.glmnet(x=as.matrix(covid_data%>%select(-covid.x)),y=covid_data$covid.x, family = "binomial")
       metformin_fit<-cv.glmnet(x=as.matrix(metformin_data%>%select(-metformin.x)),y=metformin_data$metformin.x, family = "binomial")
@@ -149,14 +161,14 @@ DGP_estimation<-function(sim_result){
       pasc_fit<-cv.glmnet(x=as.matrix(pasc_data%>%select(-pasc.x)),y=pasc_data$pasc.x, family = "binomial")
 
       result<-list(visit_fit=visit_fit,covid_fit=covid_fit,vax_fit=vax_fit,metformin_fit=metformin_fit,
-                   paxlovid_fit=paxlovid_fit,death_fit=death_fit,pasc_fit=pasc_fit)
+                   paxlovid_fit=paxlovid_fit,death_fit=death_fit,pasc_fit=pasc_fit, baseline_data = baseline_data)
       return(result)
 }
 
 
 
 
-##Sim for each individual's observation at a given time point provided history
+#' Generate data for a specific individual and time based on history
 sim_help<-function(temp_final,long_data_temp,t,full=TRUE,fit_list){
         visit_fit<-fit_list$visit_fit
         covid_fit<-fit_list$covid_fit
@@ -307,10 +319,10 @@ sim_help<-function(temp_final,long_data_temp,t,full=TRUE,fit_list){
 }
 
 
-##Sim each individual's whole observation
-
+#' Sample all data for a given id
 sim_individual<-function(id,fit_list){
         id1<-id
+        baseline_data <- fit_list$baseline_data
         baseline_temp<-baseline_data[sample(1:length(baseline_data), 1, replace=TRUE),]
         baseline_temp<-baseline_temp%>%mutate(id=id1)
         #t=1, seq: covid, vax, pasc, metformin, paxlovid, death

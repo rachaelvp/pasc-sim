@@ -9,28 +9,28 @@ PASC TRUE DGD
 PASC TRUE DGD
 }
 \section{Super class}{
-\code{tmle3sim::t3s_Simulation} -> \code{PascSim}
+\code{\link[tmle3sim:t3s_Simulation]{tmle3sim::t3s_Simulation}} -> \code{PascSim}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-PascSim-new}{\code{PascSim$new()}}
-\item \href{#method-PascSim-sample}{\code{PascSim$sample()}}
-\item \href{#method-PascSim-clone}{\code{PascSim$clone()}}
+\item \href{#method-new}{\code{PascSim$new()}}
+\item \href{#method-sample}{\code{PascSim$sample()}}
+\item \href{#method-clone}{\code{PascSim$clone()}}
 }
 }
-\if{html}{\out{
-<details open><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="print"><a href='../../tmle3sim/html/t3s_Simulation.html#method-t3s_Simulation-print'><code>tmle3sim::t3s_Simulation$print()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="run"><a href='../../tmle3sim/html/t3s_Simulation.html#method-t3s_Simulation-run'><code>tmle3sim::t3s_Simulation$run()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="run_step"><a href='../../tmle3sim/html/t3s_Simulation.html#method-t3s_Simulation-run_step'><code>tmle3sim::t3s_Simulation$run_step()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{
+\out{<details open ><summary>Inherited methods</summary>}
+\itemize{
+\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="print">}\href{../../tmle3sim/html/t3s_Simulation.html#method-print}{\code{tmle3sim::t3s_Simulation$print()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="run">}\href{../../tmle3sim/html/t3s_Simulation.html#method-run}{\code{tmle3sim::t3s_Simulation$run()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Simulation" data-id="run_step">}\href{../../tmle3sim/html/t3s_Simulation.html#method-run_step}{\code{tmle3sim::t3s_Simulation$run_step()}}\out{</span>}
+}
+\out{</details>}
+}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PascSim-new"></a>}}
-\if{latex}{\out{\hypertarget{method-PascSim-new}{}}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PascSim$new(params = list(), ...)}\if{html}{\out{</div>}}
@@ -38,8 +38,8 @@ PASC TRUE DGD
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PascSim-sample"></a>}}
-\if{latex}{\out{\hypertarget{method-PascSim-sample}{}}}
+\if{html}{\out{<a id="method-sample"></a>}}
+\if{latex}{\out{\hypertarget{method-sample}{}}}
 \subsection{Method \code{sample()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PascSim$sample()}\if{html}{\out{</div>}}
@@ -47,8 +47,8 @@ PASC TRUE DGD
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PascSim-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-PascSim-clone}{}}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
