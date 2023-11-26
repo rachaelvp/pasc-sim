@@ -336,6 +336,7 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
 
 calc_summary <- function(data){
   study_tv <- data$study_tv
+  n <- length(unique(study_tv$n))
   to_summarize <- c("covid","pasc","death","vax","metformin","paxlovid")
   summaries <- study_tv[,lapply(.SD, mean), by=list(period), .SDcols=to_summarize]
   summaries[,regime:=c(0, (seq_len(16-1)-1) * 30 + 6)]
@@ -347,7 +348,7 @@ calc_summary <- function(data){
 
 calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
-  data_1 <- generate_data(1)
+  data_1 <- generate_data(n)
   summary <- calc_summary(data_1)
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time
