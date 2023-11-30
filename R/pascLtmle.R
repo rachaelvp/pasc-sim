@@ -56,6 +56,8 @@ pascLtmle <- R6Class(
       }
 
       # manually calc TSMs
+
+      EIF_solved <- fit$EIF_solved
       g <- fit$cum.g
       g <- g[,dim(g)[2],]
       g[is.na(g)] <- 1 # fix censoring (C=0 makes this irrelevant)
@@ -66,13 +68,17 @@ pascLtmle <- R6Class(
       A <- apply(A_arr==regimes,c(1,3), all)
       C <- uncensoring$t_16_death
       IC <- (A*C/g)*(Y-Q)+scale(Q,scale = FALSE)
+      ED <- colMeans(IC)
       se <- sqrt(colMeans(IC^2)/n)
       tsms <- data.table(regime = intervention_days, period = "all",
-                         mean = colMeans(Q), se = se)
+                         mean = colMeans(Q), se = se, ED = ED)
 
-      Y%*%A/colSums(A)
+      # Y%*%A/colSums(A)
       msm_beta <- data.frame("msm", "all", summary(fit)$cmat[2, 1:2, drop = FALSE])
+      msm_beta$ED <- colMeans(fit$IC)[2]
+
       results <- rbind(tsms, msm_beta, use.names = FALSE)
+      results$EIF_solved <- mean(EIF_solved, na.rm = TRUE)
       return(results)
     }
   )

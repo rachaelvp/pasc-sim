@@ -12,18 +12,34 @@ generate_baseline(n)
 
 generate_tv_init(baseline_covariates)
 
-generate_tv_single(baseline_covariates, current_tv, new_time, regime = NULL)
+generate_tv_single(
+  baseline_covariates,
+  current_tv,
+  new_time,
+  regime = NA,
+  limit_covid = TRUE,
+  effect_size
+)
 
-generate_tv_all(baseline_covariates, regime, time_increment, end_time)
+generate_tv_all(
+  baseline_covariates,
+  regime,
+  time_increment,
+  end_time,
+  limit_covid,
+  effect_size
+)
 
 generate_data(
-  n,
+  n = 1000,
   full = TRUE,
   include_p = TRUE,
-  regime = NULL,
+  regime = NA,
   time_increment = 6,
   end_time = 20 * 30,
   obs_scale = 30,
+  limit_covid = TRUE,
+  effect_size = 1/30,
   ...
 )
 }

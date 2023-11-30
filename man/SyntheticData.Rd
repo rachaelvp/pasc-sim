@@ -16,6 +16,7 @@ PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can 
 \itemize{
 \item \href{#method-SyntheticData-new}{\code{SyntheticData$new()}}
 \item \href{#method-SyntheticData-estimate}{\code{SyntheticData$estimate()}}
+\item \href{#method-SyntheticData-child_simulation}{\code{SyntheticData$child_simulation()}}
 \item \href{#method-SyntheticData-clone}{\code{SyntheticData$clone()}}
 }
 }
@@ -41,6 +42,15 @@ PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can 
 \subsection{Method \code{estimate()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SyntheticData$estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SyntheticData-child_simulation"></a>}}
+\if{latex}{\out{\hypertarget{method-SyntheticData-child_simulation}{}}}
+\subsection{Method \code{child_simulation()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SyntheticData$child_simulation()}\if{html}{\out{</div>}}
 }
 
 }

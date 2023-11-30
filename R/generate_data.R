@@ -207,6 +207,48 @@ combine_p_val <- function(x){
   1-prod(1-x)
 }
 
+#'
+format_data <- function(study_tv, baseline_covariates, tv_covars = c(),
+                        latent_covars = c("last_vax", "last_covid",
+                                          "vax_count", "time_since_exposure",
+                                          "covid_lag")){
+
+  # reshape wide
+  long <- melt(study_tv, id=c("id","period"))
+  wide <- dcast(long, id~period+variable)
+
+  final <- merge(baseline_covariates, wide, by = c("id"))
+  all_nodes <- names(final)
+  obs_nodes <- grep("\\_p\\_", all_nodes, invert = TRUE, value = TRUE)
+
+  # define nodes
+  Wnodes <- setdiff(names(baseline_covariates), c("id","baseline_metformin","visit_rate"))
+
+  covid_nodes <- grep("t_[[:digit:]]+_covid$", obs_nodes, value = TRUE)
+
+  # drop final covid node
+  outcome_period <- max(study_tv$period)
+  covid_nodes <- covid_nodes[!grepl(outcome_period, covid_nodes)]
+
+  # grab final obs node
+  final_obs <- grep(sprintf('%s.*%s', outcome_period, "obs_period"), obs_nodes, value = TRUE)
+  Anodes <- c(covid_nodes, final_obs)
+
+  L_vars <- setdiff(tv_covars,c(latent_covars,"covid","pasc","death"))
+  L_regex <- paste("t_[[:digit:]]+_",L_vars, "$",collapse = "|", sep="")
+  Lnodes <- grep(L_regex, obs_nodes, value = TRUE)
+  Lnodes <- setdiff(Lnodes, Anodes)
+
+  Ynodes <- grep(sprintf('%s.*%s', outcome_period, "pasc"), obs_nodes, value = TRUE)
+
+  Cnodes <- grep("death", obs_nodes, value = TRUE)
+
+  node_list <-list (W = Wnodes, A = Anodes, L=Lnodes, Y=Ynodes, C=Cnodes)
+
+  result <- list(final = final, node_list = node_list, study_tv = study_tv)
+
+  return(result)
+}
 #' @rdname dgd
 generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, effect_size = 1/30, ...){
   baseline_covariates <- generate_baseline(n)
@@ -298,40 +340,7 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   ########################################
   #
   # Generate final wide dataset
-
-  # reshape wide
-  long <- melt(study_tv, id=c("id","period"))
-  wide <- dcast(long, id~period+variable)
-
-  final <- merge(baseline_obs, wide, by = c("id"))
-  all_nodes <- names(final)
-  obs_nodes <- grep("\\_p\\_", all_nodes, invert = TRUE, value = TRUE)
-
-  # define nodes
-  Wnodes <- setdiff(names(baseline_covariates), c("id","baseline_metformin","visit_rate"))
-
-  covid_nodes <- grep("t_[[:digit:]]+_covid$", obs_nodes, value = TRUE)
-
-  # drop final covid node
-  covid_nodes <- covid_nodes[!grepl(outcome_period, covid_nodes)]
-
-  # grab final obs node
-  final_obs <- grep(sprintf('%s.*%s', outcome_period, "obs_period"), obs_nodes, value = TRUE)
-  Anodes <- c(covid_nodes, final_obs)
-
-  L_vars <- setdiff(tv_covars,c(latent_covars,"covid","pasc","death"))
-  L_regex <- paste("t_[[:digit:]]+_",L_vars, "$",collapse = "|", sep="")
-  Lnodes <- grep(L_regex, obs_nodes, value = TRUE)
-
-  Ynodes <- grep(sprintf('%s.*%s', outcome_period, "pasc"), obs_nodes, value = TRUE)
-
-  Cnodes <- grep("death", obs_nodes, value = TRUE)
-
-  node_list <-list (W = Wnodes, A = Anodes, L=Lnodes, Y=Ynodes, C=Cnodes)
-
-  result <- list(final = final, obs_tv = obs_tv, node_list = node_list, study_tv = study_tv)
-
-  return(result)
+  results <- format_data(study_tv, baseline_covariates, tv_covars, latent_covars)
 }
 
 calc_summary <- function(data){

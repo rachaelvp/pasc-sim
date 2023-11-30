@@ -17,6 +17,11 @@ ps_Reporter <- R6Class("ps_Reporter",
                            result <- super$make_final()
                            result$n <- self$n
                            result$effect_size <- self$effect_size
+                           ps <- self$simulation$parent_seed
+                           if(!is.null(ps)){
+                             result$parent_seed <- ps
+                           }
+
                            private$.final_report <- result
                            return(result)
                          }

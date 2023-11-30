@@ -33,7 +33,7 @@ PASC Sim Reporting
 \if{latex}{\out{\hypertarget{method-ps_Reporter-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$new(params, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ps_Reporter$new(params = NULL, ...)}\if{html}{\out{</div>}}
 }
 
 }
