@@ -85,11 +85,7 @@ fit_column <- function(pred_data, col, learner = NULL, counting = FALSE, verbose
 #'
 #' @import glmnet
 #' @import sl3
-<<<<<<< HEAD
 DGP_estimation<-function(data, learner_list){
-=======
-DGP_estimation<-function(data, learner_list = learner_list_fast){
->>>>>>> 7f6d0f7afddd4d91e3396e5331698d5dfd42b32a
   final<-data$final
   study_tv<-data$study_tv
   full<-TRUE
