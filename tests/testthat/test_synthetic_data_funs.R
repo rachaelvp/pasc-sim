@@ -1,5 +1,6 @@
 data <- generate_data(1e3, effect_size = 0.1)
 
+
 learner_list_glmnet <- list(constant = make_learner(Lrnr_mean),
                             binary = make_learner(Lrnr_glmnet),
                             counting = make_learner(Lrnr_glmnet))
