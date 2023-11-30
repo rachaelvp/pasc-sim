@@ -9,26 +9,26 @@ PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can 
 PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can sample from and apply the same estimation)
 }
 \section{Super class}{
-\code{\link[tmle3sim:t3s_Estimator]{tmle3sim::t3s_Estimator}} -> \code{pascSummary}
+\code{tmle3sim::t3s_Estimator} -> \code{pascSummary}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{pascSummary$new()}}
-\item \href{#method-estimate}{\code{pascSummary$estimate()}}
-\item \href{#method-clone}{\code{pascSummary$clone()}}
+\item \href{#method-pascSummary-new}{\code{pascSummary$new()}}
+\item \href{#method-pascSummary-estimate}{\code{pascSummary$estimate()}}
+\item \href{#method-pascSummary-clone}{\code{pascSummary$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-\item \out{<span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Estimator" data-id="print">}\href{../../tmle3sim/html/t3s_Estimator.html#method-print}{\code{tmle3sim::t3s_Estimator$print()}}\out{</span>}
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="tmle3sim" data-topic="t3s_Estimator" data-id="print"><a href='../../tmle3sim/html/t3s_Estimator.html#method-t3s_Estimator-print'><code>tmle3sim::t3s_Estimator$print()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-pascSummary-new"></a>}}
+\if{latex}{\out{\hypertarget{method-pascSummary-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{pascSummary$new(params = NULL)}\if{html}{\out{</div>}}
@@ -36,8 +36,8 @@ PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can 
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-estimate}{}}}
+\if{html}{\out{<a id="method-pascSummary-estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-pascSummary-estimate}{}}}
 \subsection{Method \code{estimate()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{pascSummary$estimate()}\if{html}{\out{</div>}}
@@ -45,8 +45,8 @@ PASC Sim Synthetic Data Estimation (this should probably yield a new sim we can 
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-pascSummary-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-pascSummary-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

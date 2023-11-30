@@ -20,12 +20,12 @@ Imports: R6,
          stremr,
          future,
          future.callr,
-         dplyr,
          glmnet
 Remotes:
     github::tlverse/tmle3sim,
     github::tlverse/hal9001,
     github::tlverse/sl3@devel,
+    github::jeremyrcoyle/ltmle@return-when-solver-fails,
     github::https://github.com/osofr/stremr
 RoxygenNote: 7.2.3
 Suggests: 

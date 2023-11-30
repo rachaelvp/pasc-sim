@@ -1,7 +1,7 @@
 library(tmle3sim)
-library(data.table)
 library(ggplot2)
 devtools::load_all()
+library(data.table)
 
 # generate true values
 if(!file.exists("psi_0.Rdata")){
@@ -14,6 +14,7 @@ if(!file.exists("psi_0.Rdata")){
 
 results <- load_results()
 results <- rbindlist(results)
+results[regime%in%c("msm","error"),table(regime,n)]
 results <- merge( results, psi_0, by = c("period","regime","effect_size"))
 
 results <- results[!is.na(mean)&!is.na(se)]
@@ -22,9 +23,9 @@ results[,var:=(mean-mean(mean))^2, by=list(regime,n)]
 results[,mse:=(mean-psi_0)^2]
 results[,lower:=mean-1.96*se]
 results[,upper:=mean+1.96*se]
-results[,coverage:=between(psi_0, lower,  upper)]
+results[,coverage:=data.table::between(psi_0, lower,  upper)]
 results[,ci_length:=upper-lower]
-results[,power:=!between(0, lower,  upper)]
+results[,power:=!data.table::between(0, lower,  upper)]
 
 conditions = c("regime","n")
 metrics = c("bias", "var", "mse", "coverage", "ci_length", "power")

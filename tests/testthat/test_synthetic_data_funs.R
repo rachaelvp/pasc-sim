@@ -1,8 +1,8 @@
-data <- generate_data(1e3)
+data <- generate_data(1e3, effect_size = 0.1)
 system.time({
-  dgp_est <- DGP_estimation(data)
+  dgp_estimate <- DGP_estimation(data)
 })
 
-system.time({
-  data_1 <- sim_individual(1, dgp_est)
-})
+data_1 <- generate_synthetic(dgp_estimate)
+
+data_100 <- generate_synthetic(dgp_estimate, 1e2)

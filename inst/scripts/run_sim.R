@@ -23,13 +23,25 @@ if(cores==4){
   n_runs <- cores*2
 } else {
   n_runs <- 1e3
+  sim_specs <- sim_spec
 }
+
 # define est and reporter
+ltmle_spec <- make_spec(pascLtmle, params = c())
+sum_spec <- make_spec(pascSummary, params = c())
+
+synth_est <- SyntheticDGP$new(params = list(learner_list = learner_list_glmnet,
+                                            child_n = NULL,
+                                            child_nruns = 20,
+                                            child_est_specs = list(sum_spec, ltmle_spec)))
+
+est_specs <- list(ltmle_spec, sum_spec, synth_spec)
+
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())
 
 # run the sims
-results = run_sims(sim_specs, est_spec, reporter, n_runs = n_runs)
+results = run_sims(sim_specs, est_specs, reporter, n_runs = n_runs)
 save(results, file = "results.Rdata")
 
 # factory <- function(sim_spec, est_spec, reporter){
