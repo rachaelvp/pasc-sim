@@ -42,12 +42,13 @@ learner_list_mean <- list(constant = make_learner(Lrnr_mean),
                           counting = make_learner(Lrnr_mean))
 
 
-synth_est <- SyntheticDGP$new(params = list(learner_list = learner_list_glmnet,
-                                            child_n = NULL,
-                                            child_nruns = 20,
-                                            child_est_specs = list(sum_spec, ltmle_spec)))
+synth_spec <- make_spec(SyntheticDGP,
+                        params = list(learner_list = learner_list_glmnet,
+                                      child_n = NULL,
+                                      child_nruns = 20,
+                                      child_est_specs = list(sum_spec, ltmle_spec)))
 
-est_specs <- list(ltmle_spec, sum_spec, synth_spec)
+est_specs <- list(sum_spec, ltmle_spec, synth_spec)
 
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())
