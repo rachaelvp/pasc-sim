@@ -42,6 +42,7 @@ SyntheticDGP <- R6Class(
         child_n <- self$n
       }
       sim_params <- list(n = child_n,
+                         effect_size = self$simulation$effect_size,
                          parent = self,
                          dgp_estimate = self$dgp_estimate)
       spec <- make_spec(SyntheticData, sim_params)
@@ -93,6 +94,9 @@ SyntheticData <- R6Class(
     },
     parent_seed = function(){
       return(self$parent_estimator$simulation$seed)
+    },
+    effect_size = function(){
+      return(self$params$effect_size)
     }
   ),
   private = list(

@@ -341,23 +341,30 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   #
   # Generate final wide dataset
   results <- format_data(study_tv, baseline_covariates, tv_covars, latent_covars)
+  results$obs_tv <- obs_tv
+  return(results)
 }
 
 calc_summary <- function(data){
   study_tv <- data$study_tv
-  n <- length(unique(study_tv$n))
+  n <- length(unique(study_tv$id))
   to_summarize <- c("covid","pasc","death","vax","metformin","paxlovid")
+
   summaries <- study_tv[,lapply(.SD, mean), by=list(period), .SDcols=to_summarize]
   summaries[,regime:=c(0, (seq_len(16-1)-1) * 30 + 6)]
   long <- melt(summaries, id="regime", measure=to_summarize, variable.name = "period", value.name="mean")
-  long[,se:=mean*(1-mean)/sqrt(n)]
+  se_p <- function(x,n){
+    x <- pmin(pmax(x,1/n),1-(1/n))
+    sqrt(x*(1-x))/sqrt(n)
+  }
+  long[,se:=se_p(mean, n)]
 
   return(long)
 }
 
 calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
-  data_1 <- generate_data(n)
+  data_1 <- generate_data(n, effect_size = effect_size)
   summary <- calc_summary(data_1)
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time

@@ -13,9 +13,12 @@ learner_list_mean <- list(constant = make_learner(Lrnr_mean),
                           counting = make_learner(Lrnr_mean))
 
 system.time({
-  dgp_estimate <- DGP_estimation(data, learner_list_fast)
+  dgp_estimate <- DGP_estimation(data, learner_list_glmnet)
 })
 
-data_1 <- generate_synthetic(dgp_estimate)
+system.time({
+  data_1 <- generate_synthetic(dgp_estimate)
+})
 
-data_100 <- generate_synthetic(dgp_estimate, 1e2)
+mean(data_1$study_tv$pasc)
+mean(data$study_tv$pasc)

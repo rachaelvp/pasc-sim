@@ -52,7 +52,9 @@ fit_column <- function(pred_data, col, learner = NULL, counting = FALSE, verbose
     period_seq <- function(period){seq(from=1, to = max(period) + 1)}
     col_neg <- as.vector(pred_data[,col, with = FALSE]==FALSE)
     periods <- pred_data[col_neg, list(period = period_seq(period)), by = "id"]
-    pred_final <- merge(periods, pred_data, by = c("id", "period"))
+    col_order <- names(pred_data)
+    pred_final <- merge(pred_data, periods, by = c("id", "period"))
+    pred_final <- pred_final[,col_order, with = FALSE]
   } else {
     pred_final <- pred_data
   }
@@ -197,7 +199,7 @@ generate_synthetic <- function(dgp_estimate, n = NULL){
       # message(sprintf("generating predictions for '%s' at time=%s", col, current_period))
       # bug in sl3 requires columns to not be all missing
       set(pred_data, NULL, col, 0)
-      task <- column_task(pred_data, col)
+      task <- make_sl3_Task(pred_data, outcome=col, covariates = fit$params$covariates)
       preds <- fit$predict(task)
       # TODO: add sample methods to sl3 learners
       vals <- rbinom(n,1,preds)
