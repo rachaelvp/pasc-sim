@@ -250,7 +250,7 @@ format_data <- function(study_tv, baseline_covariates, tv_covars = c(),
   return(result)
 }
 #' @rdname dgd
-generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, effect_size = 1/30, ...){
+generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, effect_size = 1/30, obs_only = FALSE, ...){
   baseline_covariates <- generate_baseline(n)
   baseline_obs <- copy(baseline_covariates)
 
@@ -289,6 +289,9 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
     obs_tv <- tv[visit==1]
   }
 
+  if(obs_only){
+    return(list(obs_tv=obs_tv))
+  }
 
 
   expected_periods <- data.table(expand.grid(id=baseline_covariates$id, period=all_periods))
@@ -301,15 +304,14 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   if(full){
     tv_covars <- c(tv_covars, latent_covars)
   }
-  max_or_na <- function(x){
-    suppressWarnings(m <- max(x, na.rm = TRUE))
-    ifelse(!is.finite(m), NA_real_, m)
-  }
 
 
 
-  period_tv <- expected_tv[,lapply(.SD, max_or_na), by=list(id, period), .SDcols = c("visit",tv_covars)]
-
+  period_tv <- expected_tv[,lapply(.SD, max, na.rm=TRUE), by=list(id, period), .SDcols = c("visit",tv_covars)]
+  infinite_to_na <- function(x){ifelse(is.finite(x),x,NA_real_)}
+  period_tv <- period_tv[,c(list(id=id,period=period),
+                            lapply(.SD, infinite_to_na)),
+                         .SDcols = c("visit",tv_covars)]
 
 
   # impute tv covars
@@ -345,27 +347,34 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   return(results)
 }
 
-calc_summary <- function(data){
+calc_summary <- function(data, use_p = FALSE){
   study_tv <- data$study_tv
   n <- length(unique(study_tv$id))
-  to_summarize <- c("covid","pasc","death","vax","metformin","paxlovid")
-
-  summaries <- study_tv[,lapply(.SD, mean), by=list(period), .SDcols=to_summarize]
-  summaries[,regime:=c(0, (seq_len(16-1)-1) * 30 + 6)]
-  long <- melt(summaries, id="regime", measure=to_summarize, variable.name = "period", value.name="mean")
-  se_p <- function(x,n){
-    x <- pmin(pmax(x,1/n),1-(1/n))
-    sqrt(x*(1-x))/sqrt(n)
+  to_summarize <- c("covid","pasc","death","vax")
+  if(use_p){
+    measures <- sprintf("p_%s", to_summarize)
+  } else{
+    measures <- to_summarize
   }
-  long[,se:=se_p(mean, n)]
 
-  return(long)
+  long <- melt(study_tv, id = "period", measure = measures, variable.name = "measure", value.name = "value")
+  summaries <- long[,list(mean=mean(value), se = sd(value)/sqrt(n)),by=list(period, measure)]
+
+  summaries[,period:=as.numeric(gsub("t_","",period, fixed = TRUE))]
+  summaries[,regime:=(period-2) * 30 + 6]
+  summaries[regime<0,regime:=0]
+
+  summaries[,period:=to_summarize[match(measure, measures)]]
+  summaries <- summaries[,c("regime","period","mean","se"), with = FALSE]
+
+  return(summaries)
 }
+
 
 calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
-  data_1 <- generate_data(n, effect_size = effect_size)
-  summary <- calc_summary(data_1)
+  data_1 <- generate_data(n, effect_size = effect_size, include_p = TRUE)
+  summary <- calc_summary(data_1, use_p = TRUE)
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time
 
@@ -383,7 +392,7 @@ calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
     post_intervention_min <- int_time + 30
     post_intervention_max <- int_time + 30*6
 
-    int_data <- generate_data(n, full = TRUE, include_p = TRUE, regime = int_time, effect_size = effect_size)
+    int_data <- generate_data(n, full = TRUE, include_p = TRUE, regime = int_time, effect_size = effect_size, obs_only = TRUE)
     final_p <- int_data$obs_tv[period==final_period,list(p=combine_p_val(p_pasc), period = "final"),by=id]
     post_p <- int_data$obs_tv[between(time, int_time + 30, int_time+30*6),list(p=combine_p_val(p_pasc), period = "post"),by=id]
     all_p <- int_data$obs_tv[,list(p=combine_p_val(p_pasc), period = "all"),by=id]

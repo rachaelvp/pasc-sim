@@ -5,7 +5,7 @@ library(data.table)
 
 # generate true values
 if(!file.exists("psi_0.Rdata")){
-  psi_0 <- calc_psi_0(1e3,effect_size=0.1)
+  psi_0 <- calc_psi_0(1e4,effect_size=0.1)
   setnames(psi_0, c("mean","se"), c("psi_0", "se(psi_0)"))
   save(psi_0,file="psi_0.Rdata")
 } else {
@@ -17,19 +17,19 @@ if(!file.exists("psi_0.Rdata")){
 # results <- load_results("Results_backup/")
 results <- load_results("Results/")
 results <- rbindlist(results, fill = TRUE)
-
+results <- results[is.na(child_simulation_uuid)]
 # TODO: fix effect size for synth data
 results[,effect_size:=0.1]
 
 # TODO: fix se calc for summary measures
 point_estimates <- c("covid", "pasc", "death", "vax",
                      "metformin", "paxlovid")
-se_p <- function(x,n){
-  x <- pmin(pmax(x,1/n),1-(1/n))
-  sqrt(x*(1-x))/sqrt(n)
-}
-results[period%in%point_estimates,se:=se_p(mean,n)]
-
+# se_p <- function(x,n){
+#   x <- pmin(pmax(x,1/n),1-(1/n))
+#   sqrt(x*(1-x))/sqrt(n)
+# }
+# results[period%in%point_estimates,se:=se_p(mean,n)]
+results[,regime:=as.character(regime)]
 results <- merge( results, psi_0, by = c("period","regime","effect_size"))
 
 results <- results[!is.na(mean)&!is.na(se)]
@@ -45,6 +45,18 @@ results[,power:=!data.table::between(0, lower,  upper)]
 conditions = c("simulation_name","period","regime","n")
 metrics = c("bias", "var", "mse", "coverage", "ci_length", "power")
 perf <- performance_summary(results, conditions, metrics)
+
+
+
+perf_pe <- perf[period%in%point_estimates&metric!="power"]
+perf_pe[,regime:=as.numeric(regime)]
+
+
+ggplot(perf_pe[n==10000], aes(x=regime, y= value,
+                             ymin = lower, ymax = upper, linetype=simulation_name))+
+  geom_line()+geom_ribbon(alpha=0.2)+facet_grid(metric~period, scales="free_y")
+
+
 
 # bias2 <- perf[metric == "bias", list(simulation_name = simulation_name, regime = regime, n=n,
 #                                      metric = "bias^2",
@@ -84,16 +96,6 @@ errors <- results[regime=="error"]
 table(errors$period)
 #
 
-
-perf_pe <- perf[period%in%point_estimates]
-perf_pe[,regime:=as.numeric(regime)]
-
-
-ggplot(perf_pe, aes(x=regime, y= value,
-                    ymin = lower, ymax = upper, linetype=simulation_name))+
-  geom_line()+geom_ribbon(alpha=0.2)+facet_grid(metric~period, scales="free_y")
-
-
 # look at performance relative to sample dist
 parent_seeds <- unique(results$parent_seed)
 parent_results <- results[seed%in%parent_seeds,
@@ -120,12 +122,12 @@ conditions = c("simulation_name","period","regime","n")
 metrics = c("bias", "var", "mse", "coverage", "ci_length", "power")
 perf <- performance_summary(combined, conditions, metrics)
 
-perf_pe <- perf[period%in%point_estimates]
+perf_pe <- perf[period%in%point_estimates&metric!="power"]
 perf_pe[,regime:=as.numeric(regime)]
 
 
-ggplot(perf_pe, aes(x=regime, y= value,
-  ymin = lower, ymax = upper, linetype=simulation_name))+
+ggplot(perf_pe[simulation_name=="PascSim"], aes(x=regime, y= value,
+  ymin = lower, ymax = upper, linetype=factor(n)))+
   geom_line()+geom_ribbon(alpha=0.2)+facet_grid(metric~period, scales="free_y")
 
 test <- combined[period=="covid"&regime==96]
