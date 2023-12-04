@@ -1,0 +1,207 @@
+---
+title: "Synthetic Data Simulation Results"
+output: pdf_document
+date: "2023-12-04"
+---
+
+```{r setup, include=FALSE}
+library(pascsim)
+library(tmle3sim)
+library(ggplot2)
+library(data.table)
+library(knitr)
+library(stringr)
+library(lubridate)
+opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+
+## Simulation Summary
+
+LTMLE generated quite a few errors, reducing results given available time. Below 
+are counts of completed runs and runs with errors for each simulation setting.
+
+```{r sim_iter}
+
+# results <- load_results("Results_backup/")
+
+results <- load_results()
+results <- rbindlist(results, fill = TRUE)
+results <- results[is.na(child_simulation_uuid)]
+valid_n <- c(1e3,1e4,1e5)
+results <- results[n%in%valid_n]
+sim_names <- c("SyntheticData", "PascSim")
+data_types <- c("Synthetic", "MC")
+results[,data := data_types[match(simulation_name, sim_names)]]
+est_names <- c("pascLtmle", "pascSummary")
+est_labels <- c("LTMLE", "Marginal")
+results[,estimator := est_labels[match(estimator_name, est_names)]]
+
+# find errors by looking for missing results by seed
+results[,error:=regime=="error"]
+errors <- results[,list(data = data[1],
+                        estimator = setdiff(est_labels, unique(estimator)),
+                        n = n[1]), 
+                  by = list(seed)]
+errors <- errors[!is.na(estimator),]
+errors[,error:= TRUE]
+results_w_errors <- rbind(results, errors, fill = TRUE)
+iter_counts <- results_w_errors[,list(count = length(unique(seed))),by=list(data, estimator, n, error)]
+iter_counts[,error:=ifelse(error, "error", "completed")]
+wide <- dcast(iter_counts, data + estimator ~ error + n, fill = 0, value.var = "count")
+kable(wide)
+```
+
+LTMLE was very time consuming, especially at larger sample sizes:
+
+```{r sim_time}
+
+iter_times <- results[,list(time = mean(runtime)),by=list(data, estimator, n)]
+format_duration <- function(x){
+  dur <- round(as.period(dseconds(x)))
+  
+  sub_day <- sprintf("%02d:%02d:%02d", hour(dur), minute(dur), second(dur))
+  formatted <- ifelse(day(dur), sprintf("%d day %s", day(dur), sub_day), sub_day)
+}
+x <- iter_times$time
+iter_times[,duration:=format_duration(time)]
+wide <- dcast(iter_times, data + estimator ~ n, value.var = "duration")
+kable(wide)
+```
+
+```{r calc_perf}
+load("psi_0.Rdata")
+results[is.na(effect_size), effect_size:=0.1]
+point_estimates <- c("covid", "pasc", "death", "vax",
+                     "metformin", "paxlovid")
+
+# recalculate SE for marginal estimates
+se_p <- function(x,n){
+   x <- pmin(pmax(x,1/n),1-(1/n))
+   sqrt(x*(1-x))/sqrt(n)
+}
+results[period%in%point_estimates,se:=se_p(mean,n)]
+results[,regime:=as.character(regime)]
+results <- merge( results, psi_0, by = c("period","regime","effect_size"))
+
+# truncate giant SEs and throw out missing values
+# TODO: figure out why these are happening (Positivity)
+results <- results[!is.na(mean)&!is.na(se)]
+results[, se:=ifelse(se>quantile(se,0.9), quantile(se,0.9), se), by=list(regime, period)]
+
+
+results[,bias:=mean-psi_0]
+results[,var:=(mean-mean(mean))^2, by=list(data, period, regime, n)]
+results[,mse:=(mean-psi_0)^2]
+results[,lower:=mean-1.96*se]
+results[,upper:=mean+1.96*se]
+results[,coverage:=data.table::between(psi_0, lower,  upper)]
+results[,ci_length:=upper-lower]
+results[,power:=!data.table::between(0, lower,  upper)]
+
+conditions <- c("data","period","regime","n")
+metrics <- c("bias", "var", "mse", "coverage", "ci_length", "power")
+metric_labels <- c("Bias", "Variance", "MSE", "Coverage", "CI Length", "Power")
+metric_labels <- factor(metric_labels, levels = metric_labels)
+perf <- performance_summary(results, conditions, metrics)
+perf[,label:=metric_labels[match(metric, metrics)]]
+# display absolute bias instead of bias w/ sign for easier comparison
+suppressWarnings(perf[,lower2:=lower])
+perf[metric=="bias", lower:=ifelse(value<0,-1*upper, lower)]
+perf[metric=="bias", upper:=ifelse(value<0,-1*lower2, upper)]
+perf[metric=="bias", value:=abs(value)]
+perf$lower2 <- NULL
+
+```
+
+\newpage
+## Point Estimate Performance
+
+Point estimate performance was degraded, improving somewhat at 
+larger sample sizes. This suggests a need for estimation with more data 
+adaptive models.
+
+
+```{r perf_pe, results = "asis"}
+perf_pe <- perf[period%in%point_estimates&metric!="power"]
+perf_pe[,regime:=as.numeric(regime)]
+perf_pe <- perf_pe[metric!="power"]
+sample_sizes <- sort( unique(perf_pe$n))
+for(n_i in sample_sizes){
+  cat(sprintf("  \n### n = %d  \n", n_i))
+  p <- ggplot(perf_pe[n==n_i], aes(x=regime, y= value,
+                                   ymin = lower, ymax = upper, 
+                                   color = data, fill = data))+
+              geom_line()+geom_ribbon(alpha=0.2)+
+              facet_grid(label~period, scales="free_y") + theme_bw() +
+              xlab ("Time (days)") + ylab("Metric")
+  print(p)
+  cat("  \n")
+}
+```
+
+\newpage
+## Causal Estimate Performance
+
+The true data generating process includes the probability of PASC as a logistic
+function of intervention time, meaning that the 
+estimated marginal structural model (MSM) is a true model.
+
+```{r plot_psi_0}
+truth <- psi_0[period == "all"]
+truth_tsm <- truth[regime!="msm"]
+truth_tsm[,regime:=as.numeric(regime)]
+
+truth_msm <- glm(psi_0 ~ regime, truth_tsm, family=binomial())
+msm_grid <- seq(from=min(truth_tsm$regime), 
+                to = max(truth_tsm$regime), length = 1e3)
+msm_data <- data.table(regime=msm_grid)
+msm_data[,psi_0:=predict(truth_msm, msm_data, type = "response")]
+ggplot(truth_tsm, aes(x=regime, y = psi_0))+
+                  geom_point() + 
+                  geom_line( data =msm_data, color="red") + 
+                  theme_bw() + xlab ("Intervention Time (days)") + ylab("p_0(PASC)")
+truth_msm <- truth[regime=="msm"]
+```
+
+\newpage
+### Treatment Specific Mean
+
+It is unclear why all estimates are biased at a particular timepoint, 
+perhaps it's an issue with targetting the MSM and not the individual TSMs. 
+Performance is again degraded for the Synthetic data.
+
+
+```{r perf_causal, results = "asis"}
+perf_tsm <- perf[period=="all"&regime!="msm"]
+perf_tsm[,regime:=as.numeric(regime)]
+perf_tsm <- perf_tsm[metric!="power"]
+sample_sizes <- sort( unique(perf_tsm$n))
+
+
+for(n_i in sample_sizes){
+  cat(sprintf("  \n### n = %d  \n", n_i))
+  p <- ggplot(perf_tsm[n==n_i], aes(x=regime, y= value,
+                                   ymin = lower, ymax = upper,
+                                   color = data, fill = data))+
+              geom_line()+geom_ribbon(alpha=0.2)+
+              facet_grid(label~., scales="free_y") + theme_bw() + 
+              xlab ("Intervention Time (days)") + ylab("Metric")
+  print(p)
+  cat("  \n")
+}
+```
+
+\newpage
+### Marginal Structural Model
+
+Performance is again degraded for the Synthetic data, although not as badly.
+
+```{r perf_msm}
+perf_msm <- perf[period=="all"&regime=="msm"]
+ggplot(perf_msm, aes(x = factor(n), y = value,
+                     ymin = lower, ymax=upper, color=data)) +
+       geom_point() + geom_errorbar() + facet_wrap(label~ ., scales = "free_y") +
+       theme_bw() + xlab ("Sample Size") + ylab("Metric")
+```
