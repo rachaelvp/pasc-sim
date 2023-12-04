@@ -5,7 +5,7 @@ library(data.table)
 
 # generate true values
 if(!file.exists("psi_0.Rdata")){
-  psi_0 <- calc_psi_0(1e4,effect_size=0.1)
+  psi_0 <- calc_psi_0(1e5,effect_size=0.1)
   setnames(psi_0, c("mean","se"), c("psi_0", "se(psi_0)"))
   save(psi_0,file="psi_0.Rdata")
 } else {

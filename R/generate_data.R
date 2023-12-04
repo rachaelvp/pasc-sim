@@ -352,7 +352,9 @@ calc_summary <- function(data, use_p = FALSE){
   n <- length(unique(study_tv$id))
   to_summarize <- c("covid","pasc","death","vax")
   if(use_p){
-    measures <- sprintf("p_%s", to_summarize)
+    study_tv[,cum_pasc:=1-cumprod(1-pasc), by=list(id)]
+    study_tv[,cum_death:=1-cumprod(1-death), by=list(id)]
+    measures <- c("p_covid","cum_pasc","cum_death","p_vax")
   } else{
     measures <- to_summarize
   }
@@ -374,7 +376,7 @@ calc_summary <- function(data, use_p = FALSE){
 calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
   # get A times
   data_1 <- generate_data(n, effect_size = effect_size, include_p = TRUE)
-  summary <- calc_summary(data_1, use_p = TRUE)
+  summary <- calc_summary(data_1, use_p = FALSE)
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time
 
