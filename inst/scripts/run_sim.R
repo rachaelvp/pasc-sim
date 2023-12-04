@@ -23,7 +23,7 @@ if(cores==4){
   n_runs <- cores*2
 } else {
   n_runs <- 1e2
-  sim_specs <- sim_spec
+  # sim_specs <- c(sim_spec2, sim_spec3)
 }
 
 # define est and reporter
@@ -48,7 +48,7 @@ synth_spec <- make_spec(SyntheticDGP,
                                       child_nruns = 20,
                                       child_est_specs = list(sum_spec, ltmle_spec)))
 
-est_specs <- list(sum_spec, ltmle_spec, synth_spec)
+est_specs <- list(sum_spec, synth_spec, ltmle_spec)
 
 est_spec <- make_spec(pascLtmle, params = c())
 reporter <- ps_Reporter$new(params = c())

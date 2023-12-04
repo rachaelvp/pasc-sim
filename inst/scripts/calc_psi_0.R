@@ -1,7 +1,9 @@
+devtools::load_all()
 results <- list()
 n_runs <- 10
 for(i in 1:n_runs){
-  psi_0 <- calc_psi_0(1e5,effect_size=0.1)
+  message(sprintf("run %d", i))
+  psi_0 <- calc_psi_0(1e4,effect_size=0.1)
   results <- c(results, list(psi_0))
 }
 psi_0_all <- rbindlist(results) 
