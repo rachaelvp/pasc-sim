@@ -24,7 +24,7 @@ Imports: R6,
 Remotes:
     github::tlverse/tmle3sim,
     github::tlverse/hal9001,
-    github::tlverse/sl3@devel,
+    github::tlverse/sl3@fix-covariate-subset,
     github::jeremyrcoyle/ltmle@return-when-solver-fails,
     github::https://github.com/osofr/stremr
 RoxygenNote: 7.2.3

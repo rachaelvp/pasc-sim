@@ -13,8 +13,9 @@ learner_list_mean <- list(constant = make_learner(Lrnr_mean),
                           counting = make_learner(Lrnr_mean))
 
 system.time({
-  dgp_estimate <- DGP_estimation(data, learner_list_glmnet)
+  dgp_estimate <- DGP_estimation(data, learner_list_fast)
 })
+
 
 system.time({
   data_1 <- generate_synthetic(dgp_estimate)

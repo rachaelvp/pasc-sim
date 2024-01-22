@@ -1,3 +1,3 @@
 #!/bin/bash
-
-R --no-save < inst/scripts/run_sim.R
+R CMD "devtools::install"
+R --no-save < inst/scripts/run_sim_marginal.R

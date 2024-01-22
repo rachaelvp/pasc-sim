@@ -11,6 +11,7 @@ SyntheticDGP <- R6Class(
     initialize = function(params) {
       super$initialize(params)
       private$.child_est_specs <- params$child_est_specs
+      private$.learner_description <- params$learner_description
     },
 
     ###START
@@ -25,16 +26,40 @@ SyntheticDGP <- R6Class(
         return(results)
       }
 
-      # run child specs and return results
+      # run child specs
       sim_specs <- self$child_sim_spec()
       est_specs <- self$child_est_specs
       reporter <- ps_Reporter$new(params = c())
       results = run_sims(sim_specs, est_specs, reporter, n_runs = n_runs)
-      results <- rbindlist(unlist(results, recursive = FALSE))
-      label_names <- c("simulation_name","estimator_name","simulation_uuid","estimator_uuid","runtime","seed")
-      child_names <- sprintf("child_%s",label_names)
-      setnames(results, label_names, child_names)
-      return(results)
+      # results <- rbindlist(unlist(results, recursive = FALSE))
+      # label_names <- c("simulation_name","estimator_name","simulation_uuid","estimator_uuid","runtime","seed")
+      # child_names <- sprintf("child_%s",label_names)
+      # setnames(results, label_names, child_names)
+
+      # return time-specific marginals of dgp estimate as results
+      pred_data <- dgp_estimate$fit[[1]]$training_task$internal_data$raw_data
+      to_summarize <- c("covid","pasc","death","vax")
+      all_preds <- lapply(dgp_estimate$fit[to_summarize], function(fit){
+
+        col <- fit$training_task$nodes$outcome
+        task <- make_sl3_Task(pred_data, outcome=col, covariates = fit$params$covariates)
+        preds <- fit$predict(task)
+      })
+
+      all_preds <- as.data.table(all_preds)
+      pred_dt <- cbind(pred_data[,list(id, period)], all_preds)
+      long <- melt(pred_dt, id = "period", measure = colnames(all_preds), variable.name = "measure", value.name = "value")
+      n <- length(unique(pred_dt$id))
+      summaries <- long[,list(mean=mean(value), se = sd(value)/sqrt(n)),by=list(period, measure)]
+
+      summaries[,period:=as.numeric(gsub("t_","",period, fixed = TRUE))]
+      summaries[,regime:=(period-2) * 30 + 6]
+      summaries[regime<0,regime:=0]
+
+      summaries[,period:=measure]
+      summaries <- summaries[,c("regime","period","mean","se"), with = FALSE]
+
+      return(summaries)
     },
     child_sim_spec = function(){
       child_n <- self$params$child_n
@@ -58,6 +83,9 @@ SyntheticDGP <- R6Class(
     },
     n = function(){
       return(self$simulation$n)
+    },
+    learner_description = function(){
+      return(private$.learner_description)
     }
   ),
   private = list(
@@ -94,6 +122,9 @@ SyntheticData <- R6Class(
     },
     parent_seed = function(){
       return(self$parent_estimator$simulation$seed)
+    },
+    learner_description = function(){
+      return(self$parent_estimator$learner_description)
     },
     effect_size = function(){
       return(self$params$effect_size)

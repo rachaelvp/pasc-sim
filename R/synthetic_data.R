@@ -139,12 +139,20 @@ DGP_estimation<-function(data, learner_list){
   # TODO: make argument
 
 
+  node_learners <- all(names(learner_list)%in%pred_nodes)
+
   # fit nodes
   fit_node <- function(pred_node){
     pred_type <- pred_types[pred_node==pred_nodes]
-    fit_column(pred_data, pred_node, learner_list[[pred_type]], pred_type=="counting")
+    if(node_learners){
+      learner <- learner_list[[pred_node]]
+    } else {
+      learner <- learner_list[[pred_type]]
+    }
+    fit_column(pred_data, pred_node, learner, pred_type=="counting")
   }
   fits <- lapply(pred_nodes, fit_node)
+  names(fits) <- pred_nodes
 
   # return results
   dgp_estimate <- list(fit = fits,
@@ -221,7 +229,7 @@ generate_synthetic <- function(dgp_estimate, n = NULL){
     pred_data[,last_vax:=ifelse(vax, period_days(period), `last_vax_t-1`)]
     pred_data[,last_covid:=ifelse(covid, period_days(period), `last_covid_t-1`)]
     pred_data[,vax_count:=`vax_count_t-1`+vax]
-    pred_data[,time_since_exposure:=pmax(last_vax, last_covid)]
+    pred_data[,time_since_exposure:=period_days(period)-pmax(last_vax, last_covid)]
     all_synthetic <- c(all_synthetic, list(pred_data))
 
     # shift pred data
