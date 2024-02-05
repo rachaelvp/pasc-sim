@@ -30,19 +30,21 @@ learner_list_glmnet <- list(constant = make_learner(Lrnr_mean),
                             binary = make_learner(Lrnr_glmnet),
                             counting = make_learner(Lrnr_glmnet))
 
+
 learner_list_glm_true <- list(obs_period = make_learner(Lrnr_mean),
                               covid = make_learner(Lrnr_glm,
-                                                   covariates = c("period_length", "time_since_exposure_t-1")),
+                                                   covariates = c("period_length", "vax_t-1", "time_since_exposure_t-1")),
                               vax = make_learner(Lrnr_glm,
-                                                 covariates = c("period_length", "time_since_exposure_t-1", "age")),
+                                                 covariates = c("period_length", "covid", "time_since_exposure_t-1", "age")),
                               metformin = make_learner(Lrnr_glm,
                                                        covariates = c("period_length", "diabetes", "covid")),
                               paxlovid = make_learner(Lrnr_glm,
                                                       covariates = c("period_length", "covid")),
                               pasc = make_learner(Lrnr_glm,
-                                                  covariates = c("period_length", "last_covid_t-1", "metformin", "paxlovid")),
+                                                  covariates = c("period_length", "last_covid_t-1", "covid", "metformin", "paxlovid")),
                               death = make_learner(Lrnr_glm,
                                                    covariates = c("period_length", "last_covid_t-1","covid", "metformin", "paxlovid", "age")))
+
 
 
 synth_spec <- make_spec(SyntheticDGP,
