@@ -16,8 +16,10 @@ ps_Reporter <- R6Class("ps_Reporter",
                          make_final = function(){
                            result <- super$make_final()
                            result$n <- self$n
+                           result$coarsen <- self$coarsen
                            result$effect_size <- self$effect_size
                            result$learners <- self$learners
+                           result$coarsen <- self$coarsen
                            ps <- self$simulation$parent_seed
                            if(!is.null(ps)){
                              result$parent_seed <- ps
@@ -33,6 +35,9 @@ ps_Reporter <- R6Class("ps_Reporter",
                          },
                          effect_size = function(){
                            return(self$simulation$effect_size)
+                         },
+                         coarsen = function(){
+                           return(self$simulation$coarsen)
                          },
                          learners = function(){
                            learners <- self$simulation$estimator$learner_description

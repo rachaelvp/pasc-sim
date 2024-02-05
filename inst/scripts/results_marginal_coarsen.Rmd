@@ -88,9 +88,8 @@ se_p <- function(x,n){
    sqrt(x*(1-x))/sqrt(n)
 }
 results[period%in%point_estimates,se:=se_p(mean,n)]
-results[,regime:=as.character(regime)]
 
-results <- merge( results, psi_0, by = c("period","regime","effect_size"))
+results <- merge( results, psi_0, by = c("period","regime","effect_size", "coarsen"))
 # 
 # 
 # # look at performance relative to parent sample ests
@@ -124,18 +123,21 @@ results[,ci_length:=upper-lower]
 results[,power:=!data.table::between(0, lower,  upper)]
 
 
-conditions <- c("data","period","regime","n", "learners")
+conditions <- c("data","period","regime","n", "learners", "coarsen")
 metrics <- c("bias", "var", "mse", "coverage", "ci_length", "power")
 metric_labels <- c("Bias", "Variance", "MSE", "Coverage", "CI Length", "Power")
 metric_labels <- factor(metric_labels, levels = metric_labels)
 perf <- performance_summary(results, conditions, metrics)
 perf[,label:=metric_labels[match(metric, metrics)]]
 # display absolute bias instead of bias w/ sign for easier comparison
-suppressWarnings(perf[,lower2:=lower])
-perf[metric=="bias", lower:=ifelse(value<0,-1*upper, lower)]
-perf[metric=="bias", upper:=ifelse(value<0,-1*lower2, upper)]
-perf[metric=="bias", value:=abs(value)]
+#suppressWarnings(perf[,lower2:=lower])
+#perf[metric=="bias", lower:=ifelse(value<0,-1*upper, lower)]
+#perf[metric=="bias", upper:=ifelse(value<0,-1*lower2, upper)]
+#perf[metric=="bias", value:=abs(value)]
 perf$lower2 <- NULL
+
+# throw out perf for the DGP estimate (seems to be a bug)
+perf <- perf[!(data=="MC"&learners=="glm_true")]
 
 ```
 
@@ -156,7 +158,7 @@ for(n_i in sample_sizes){
   cat(sprintf("  \n### n = %d  \n", n_i))
   p <- ggplot(perf_pe[n==n_i], aes(x=regime, y= value,
                                    ymin = lower, ymax = upper, 
-                                   color = factor(data):factor(learners), fill = factor(data):factor(learners)))+
+                                   color = factor(data):factor(coarsen), fill = factor(data):factor(coarsen)))+
               geom_line()+geom_ribbon(alpha=0.2)+
               facet_grid(label~period, scales="free_y") + theme_bw() +
               xlab ("Time (days)") + ylab("Metric")
@@ -173,7 +175,7 @@ for(n_i in sample_sizes){
   cat(sprintf("  \n### n = %d  \n", n_i))
   p <- ggplot(bias[n==n_i], aes(x=regime, y= value,
                                    ymin = lower, ymax = upper, 
-                                   color = factor(learners), fill = factor(learners)))+
+                                   color = factor(coarsen), fill = factor(coarsen)))+
               geom_line()+geom_ribbon(alpha=0.2)+
               facet_grid(data~period) + theme_bw() +
               xlab ("Time (days)") + ylab("Metric")

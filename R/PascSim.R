@@ -26,6 +26,9 @@ PascSim <- R6Class("PascSim",
                      effect_size = function(){
                        return(self$params$effect_size)
                      },
+                     coarsen = function(){
+                       return(self$params$coarsen)
+                     },
                      learner_description = function(){
                        return("MC")
                      }

@@ -2,14 +2,15 @@
 add_history <- function(data, baseline_data){
   # add fake data for timepoints before zero
   # TODO: make argument
-  tv_vars <-  c("obs_period", "covid", "vax", "metformin",
+  tv_vars <-  c("obs_period", "period_length", "study_days", "covid", "vax", "metformin",
                 "paxlovid", "pasc", "death", "last_vax", "last_covid", "vax_count",
                 "time_since_exposure")
   # TODO: make argument
-  tv_vals <- c(0, 0, 0, 0, 0, 0, 0, -999, -999, 0, -999)
+  tv_vals <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, -999, -999, 0, -999)
+
 
   fake_data <- data[period==1]
-  tv_mat <- matrix(tv_vals, nrow=nrow(fake_data), ncol=length(tv_vals), byrow = TRUE)
+
   tv_df <- as.data.frame(as.list(tv_vals))
   names(tv_df) <- tv_vars
   set(fake_data, NULL, tv_vars, tv_df)
@@ -30,6 +31,7 @@ add_history <- function(data, baseline_data){
   pred_data <- merge(data_p2, pred_data, by=c("id","period"))
   pred_data <- merge(baseline_data, pred_data, by="id")
 
+  return(pred_data)
 }
 #' Make a sl3 task for estimation or prediction
 column_task <- function(pred_data, col){
@@ -93,6 +95,7 @@ DGP_estimation<-function(data, learner_list){
   full<-TRUE
   nodes <- data$node_list
 
+
   ##Repeated Data for non_jumping process
   #First, get the baseline information
   baseline_data<-final[,c("id",nodes$W), with=FALSE]
@@ -103,7 +106,7 @@ DGP_estimation<-function(data, learner_list){
   # Use the long formatted data, which includes patients' history up till and including death
   # don't model certain nodes
   # TODO: make argument
-  tv_nodes <- c("id", "period", "obs_period", "covid", "vax", "metformin",
+  tv_nodes <- c("id", "period", "obs_period", "period_length", "study_days", "covid", "vax", "metformin",
                 "paxlovid", "pasc", "death", "last_vax", "last_covid", "vax_count",
                 "time_since_exposure")
   study_tv_used <- study_tv[,tv_nodes, with = FALSE]
@@ -112,6 +115,13 @@ DGP_estimation<-function(data, learner_list){
   # add history covariates (lagged from last two timepoints)
   pred_data <- add_history(study_tv_used, baseline_data)
 
+
+
+
+  # for now force period stats from period
+  period_stats <- pred_data[,list(period_length=period_length[1],
+                                  study_days = study_days[1]),
+                            by = list(period)]
 
   # determine how to process each node we want to fit
   # TODO: make argument
@@ -160,6 +170,7 @@ DGP_estimation<-function(data, learner_list){
                        pred_types = pred_types,
                        baseline_data = baseline_data,
                        times = unique(pred_data$period),
+                       period_stats = period_stats,
                        n = nrow(baseline_data))
 
 
@@ -176,6 +187,7 @@ generate_synthetic <- function(dgp_estimate, n = NULL){
 
   fits <- dgp_estimate$fit
   periods <- dgp_estimate$times
+  period_stats <- dgp_estimate$period_stats
   pred_nodes <- dgp_estimate$pred_nodes
   pred_types <- dgp_estimate$pred_types
 
@@ -184,52 +196,68 @@ generate_synthetic <- function(dgp_estimate, n = NULL){
   baseline_data[,id:=seq_len(n)]
 
   # TODO: make part of dgp_estimate output
-  tv_vars <-  c("obs_period", "covid", "vax", "metformin",
+  tv_vars <-  c("obs_period", "period_length", "study_days", "covid", "vax", "metformin",
                 "paxlovid", "pasc", "death", "last_vax", "last_covid", "vax_count",
                 "time_since_exposure")
   tv_vars_p1 <- sprintf("%s_t-1", tv_vars)
   tv_vars_p2 <- sprintf("%s_t-2", tv_vars)
 
   tv_data <- data.table(id=baseline_data$id, period = 1)
-  set(tv_data, NULL, tv_vars, NA_real_)
+
+  # force t_1 initialization
+  tv_vals_1 <- c(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -999, 1, 0)
+  tv_df_1 <- as.data.frame(as.list(tv_vals_1))
+  names(tv_df_1) <- tv_vars
+  set(tv_data, NULL, tv_vars, tv_df_1)
 
   pred_data <- add_history(tv_data, baseline_data)
+
+
 
   all_synthetic <- list()
   i <- 1
   current_period <- 1
   for(current_period in periods){
     pred_data[,period:=current_period]
+    cp_length <- period_stats[period==current_period, period_length][1]
+    cp_days <- period_stats[period==current_period, study_days][1]
+    pred_data[,period_length:=cp_length]
+    pred_data[,study_days:=cp_days]
+
     for(node_index in seq_along(pred_nodes)){
       fit <- fits[[node_index]]
       col <- pred_nodes[node_index]
       type <- pred_types[node_index]
       # message(sprintf("generating predictions for '%s' at time=%s", col, current_period))
       # bug in sl3 requires columns to not be all missing
-      set(pred_data, NULL, col, 0)
+      if(current_period!=1){
+        # keep forced observed values for period 1
+        set(pred_data, NULL, col, 0)
+      }
       task <- make_sl3_Task(pred_data, outcome=col, covariates = fit$params$covariates)
       preds <- fit$predict(task)
       # TODO: add sample methods to sl3 learners
-      vals <- rbinom(n,1,preds)
+      vals <- as.numeric(rbinom(n,1,preds))
 
       if(type=="counting"){
         last_col <- sprintf("%s_t-1", col)
         last_vals <- unlist(pred_data[,last_col, with = FALSE])
-        vals <- vals | last_vals
+        vals <- as.numeric(vals | last_vals)
       }
 
-      set(pred_data, NULL, col, vals)
+      if(current_period!=1){
+        # keep forced observed values for period 1
+        set(pred_data, NULL, col, vals)
+      }
     }
 
     # calculate derived values
-    # TODO: get these functions from the user
-    period_days <- function(period){return((period-1) * 30 + 6)}
 
     # last_vax
-    pred_data[,last_vax:=ifelse(vax, period_days(period), `last_vax_t-1`)]
-    pred_data[,last_covid:=ifelse(covid, period_days(period), `last_covid_t-1`)]
+    pred_data[,last_vax:=ifelse(vax, cp_days, `last_vax_t-1`)]
+    pred_data[,last_covid:=ifelse(covid, cp_days, `last_covid_t-1`)]
     pred_data[,vax_count:=`vax_count_t-1`+vax]
-    pred_data[,time_since_exposure:=period_days(period)-pmax(last_vax, last_covid)]
+    pred_data[,time_since_exposure:=cp_days-pmax(last_vax, last_covid)]
     all_synthetic <- c(all_synthetic, list(pred_data))
 
     # shift pred data
@@ -237,7 +265,7 @@ generate_synthetic <- function(dgp_estimate, n = NULL){
     set(new_pred, NULL, tv_vars_p2, NULL)
     setnames(new_pred, tv_vars_p1, tv_vars_p2)
     setnames(new_pred, tv_vars, tv_vars_p1)
-    set(new_pred, NULL, tv_vars, NA)
+    set(new_pred, NULL, tv_vars, NA_real_)
     pred_data <- new_pred
   }
 

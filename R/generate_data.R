@@ -166,7 +166,7 @@ generate_tv_single <- function(baseline_covariates, current_tv, new_time, regime
   tv_covariates[,p_visit:=pmin(baseline_covariates$visit_rate + 0.8*covid,1)]
   tv_covariates[,visit:=rbinom(n, 1, p_visit)]
 
-    # force visit if pasc or vax
+  # force visit if pasc or vax
   tv_covariates[,visit:=as.numeric(visit | new_pasc | vax)]
 
   # elminate post death visits (but keep visit for death)
@@ -207,9 +207,12 @@ combine_p_val <- function(x){
   1-prod(1-x)
 }
 
+combine_cum_p_val <- function(x){
+  1-cumprod(1-x)
+}
 #'
 format_data <- function(study_tv, baseline_covariates, tv_covars = c(),
-                        latent_covars = c("last_vax", "last_covid",
+                        latent_covars = c("period_length", "last_vax", "last_covid",
                                           "vax_count", "time_since_exposure",
                                           "covid_lag")){
 
@@ -250,7 +253,16 @@ format_data <- function(study_tv, baseline_covariates, tv_covars = c(),
   return(result)
 }
 #' @rdname dgd
-generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, time_increment = 6, end_time = 20*30, obs_scale = 30, limit_covid = TRUE, effect_size = 1/30, obs_only = FALSE, ...){
+generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA,
+                          time_increment = 6, end_time = 20*30, obs_scale = 30,
+                          outcome_periods = 6,
+                          limit_covid = TRUE, effect_size = 1/30, obs_only = FALSE,
+                          coarsen = TRUE, ...){
+  if(!coarsen){
+    outcome_periods <- 1
+    obs_scale <- time_increment
+  }
+
   baseline_covariates <- generate_baseline(n)
   baseline_obs <- copy(baseline_covariates)
 
@@ -274,9 +286,11 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
 
   # bin final 6 months (outcome period)
   study_months <- floor(end_time/obs_scale)
-  tx_period = study_months - 6 + 1
-  outcome_period <- sprintf("t_%02d", tx_period + 1)
-  tv[, period:=ifelse(month<=tx_period, sprintf("t_%02d", month), outcome_period)]
+  tx_period = study_months - outcome_periods + 1
+  outcome_period <- sprintf("t_%03d", tx_period + 1)
+  tv[, period:=ifelse(month<=tx_period, sprintf("t_%03d", month), outcome_period)]
+  tv[, period_length:=max(time)-min(time)+time_increment, by = list(period)]
+  tv[, study_days:= median(time), by =list(period)]
   table(tv[,list(period)])
 
   all_periods <- unique(tv$period)
@@ -298,7 +312,7 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
   expected_tv <- merge(expected_periods, obs_tv, by=c("id", "period"), all.x = TRUE)
   tv_covars <- c("covid", "vax", vax_names, "pasc", "metformin", "paxlovid", "death")
 
-  latent_covars <- c("last_vax", "last_covid", "vax_count", "time_since_exposure",
+  latent_covars <- c("period_length", "study_days", "last_vax", "last_covid", "vax_count", "time_since_exposure",
                      "covid_lag")
 
   if(full){
@@ -308,6 +322,7 @@ generate_data <- function(n=1e3, full = TRUE, include_p = TRUE, regime = NA, tim
 
 
   period_tv <- expected_tv[,lapply(.SD, max, na.rm=TRUE), by=list(id, period), .SDcols = c("visit",tv_covars)]
+
   infinite_to_na <- function(x){ifelse(is.finite(x),x,NA_real_)}
   period_tv <- period_tv[,c(list(id=id,period=period),
                             lapply(.SD, infinite_to_na)),
@@ -359,11 +374,11 @@ calc_summary <- function(data, use_p = FALSE){
     measures <- to_summarize
   }
 
-  long <- melt(study_tv, id = "period", measure = measures, variable.name = "measure", value.name = "value")
-  summaries <- long[,list(mean=mean(value), se = sd(value)/sqrt(n)),by=list(period, measure)]
+  long <- melt(study_tv, id = c("period", "study_days"), measure = measures, variable.name = "measure", value.name = "value")
+  summaries <- long[,list(mean=mean(value), se = sd(value)/sqrt(n)),by=list(period, study_days, measure)]
 
   summaries[,period:=as.numeric(gsub("t_","",period, fixed = TRUE))]
-  summaries[,regime:=(period-2) * 30 + 6]
+  summaries[,regime:=study_days]
   summaries[regime<0,regime:=0]
 
   summaries[,period:=to_summarize[match(measure, measures)]]
@@ -373,10 +388,18 @@ calc_summary <- function(data, use_p = FALSE){
 }
 
 
-calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
+calc_psi_0 <- function(n = 1e3, effect_size = 0.1, coarsen = TRUE, marginal_only = FALSE){
   # get A times
-  data_1 <- generate_data(n, effect_size = effect_size, include_p = TRUE)
+  data_1 <- generate_data(n, effect_size = effect_size, include_p = TRUE, coarsen = coarsen)
   summary <- calc_summary(data_1, use_p = FALSE)
+  if(marginal_only){
+    psi_0 <- summary
+    psi_0[,effect_size:=effect_size]
+    psi_0[,coarsen:=coarsen]
+    return(psi_0)
+  }
+
+
   period_times <- data_1$obs_tv[,c("time","period")]
   intervention_times <- period_times[, list(time=min(time)), by=list(period)]$time
 
@@ -418,5 +441,7 @@ calc_psi_0 <- function(n = 1e3, effect_size = 0.1){
 
   psi_0 <- rbind(tsms, final_beta, post_beta, all_beta, summary, use.names = FALSE)
   psi_0[,effect_size:=effect_size]
+  psi_0[,coarsen:=coarsen]
+
   return(psi_0)
 }

@@ -47,16 +47,12 @@ SyntheticDGP <- R6Class(
       })
 
       all_preds <- as.data.table(all_preds)
-      pred_dt <- cbind(pred_data[,list(id, period)], all_preds)
-      long <- melt(pred_dt, id = "period", measure = colnames(all_preds), variable.name = "measure", value.name = "value")
-      n <- length(unique(pred_dt$id))
-      summaries <- long[,list(mean=mean(value), se = sd(value)/sqrt(n)),by=list(period, measure)]
+      pred_dt <- cbind(pred_data[,list(id, period, study_days)], all_preds)
+      # TODO: do programatically for any counting columns
+      pred_dt[, death:=combine_cum_p_val(death), by = list(id)]
+      pred_dt[, pasc:=combine_cum_p_val(pasc), by = list(id)]
 
-      summaries[,period:=as.numeric(gsub("t_","",period, fixed = TRUE))]
-      summaries[,regime:=(period-2) * 30 + 6]
-      summaries[regime<0,regime:=0]
-
-      summaries[,period:=measure]
+      summaries <- calc_summary(list(study_tv = pred_dt))
       summaries <- summaries[,c("regime","period","mean","se"), with = FALSE]
 
       return(summaries)
@@ -68,6 +64,7 @@ SyntheticDGP <- R6Class(
       }
       sim_params <- list(n = child_n,
                          effect_size = self$simulation$effect_size,
+                         coarsen = self$simulation$coarsen,
                          parent = self,
                          dgp_estimate = self$dgp_estimate)
       spec <- make_spec(SyntheticData, sim_params)
@@ -128,6 +125,9 @@ SyntheticData <- R6Class(
     },
     effect_size = function(){
       return(self$params$effect_size)
+    },
+    coarsen = function(){
+      return(self$params$coarsen)
     }
   ),
   private = list(

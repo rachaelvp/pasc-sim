@@ -11,15 +11,12 @@ cores <- min(cores, 32)
 plan(future.callr::callr, workers = cores)
 
 # define specs
-params <- list(n = 1e3, effect_size=0.1)
+params <- list(n = 1e3, effect_size=0.1, coarsen = FALSE)
 sim_spec <- make_spec(PascSim,params = params)
-params <- list(n = 1e4, effect_size=0.1)
+params <- list(n = 1e3, effect_size=0.1, coarsen = TRUE)
 sim_spec2 <- make_spec(PascSim,params = params)
-params <- list(n = 1e5, effect_size=0.1)
-sim_spec3 <- make_spec(PascSim,params = params)
-sim_specs <- list(sim_spec, sim_spec2, sim_spec3)
+sim_specs <- c(sim_spec, sim_spec2)
 if(cores<=16){
-  sim_specs <- sim_spec
   n_runs <- cores*2
 } else {
   n_runs <- 1e2
@@ -35,34 +32,43 @@ learner_list_glmnet <- list(constant = make_learner(Lrnr_mean),
 
 learner_list_glm_true <- list(obs_period = make_learner(Lrnr_mean),
                               covid = make_learner(Lrnr_glm,
-                                                   covariates = c("time_since_exposure_t-1")),
+                                                   covariates = c("period_length", "time_since_exposure_t-1")),
                               vax = make_learner(Lrnr_glm,
-                                                 covariates = c("time_since_exposure_t-1", "age")),
+                                                 covariates = c("period_length", "time_since_exposure_t-1", "age")),
                               metformin = make_learner(Lrnr_glm,
-                                                       covariates = c("diabetes", "covid")),
+                                                       covariates = c("period_length", "diabetes", "covid")),
                               paxlovid = make_learner(Lrnr_glm,
-                                                      covariates = c("covid")),
+                                                      covariates = c("period_length", "covid")),
                               pasc = make_learner(Lrnr_glm,
-                                                  covariates = c("last_covid_t-1", "metformin", "paxlovid")),
+                                                  covariates = c("period_length", "last_covid_t-1", "metformin", "paxlovid")),
                               death = make_learner(Lrnr_glm,
-                                                   covariates = c("last_covid_t-1","covid", "metformin", "paxlovid", "age")))
+                                                   covariates = c("period_length", "last_covid_t-1","covid", "metformin", "paxlovid", "age")))
 
 
 synth_spec <- make_spec(SyntheticDGP,
                         params = list(learner_list = learner_list_glmnet,
                                       learner_description = "glmnet",
                                       child_n = NULL,
-                                      child_nruns = 20,
+                                      child_nruns = 5,
                                       child_est_specs = list(sum_spec)))
 
 synth_spec2 <- make_spec(SyntheticDGP,
                         params = list(learner_list = learner_list_glm_true,
                                       learner_description = "glm_true",
                                       child_n = NULL,
-                                      child_nruns = 20,
+                                      child_nruns = 5,
                                       child_est_specs = list(sum_spec)))
 
-est_specs <- list(sum_spec, synth_spec2, synth_spec)
+# sim <- sim_spec$create(seed = 303213957)
+# sim$uuid
+# est <- synth_spec2$create()
+# est$uuid
+# reporter <- ps_Reporter$new()
+# sim$estimator <- est
+# sim$reporter <- reporter
+# sim$run()
+
+est_specs <- list(sum_spec, synth_spec2)
 
 reporter <- ps_Reporter$new(params = c())
 
