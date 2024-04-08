@@ -438,6 +438,7 @@ call_with_args <- function(fun, args, other_valid = list(), keep_all = FALSE,
 
 
 # simu functions
+## HAL
 generate_uhal_data <- function(n = 500, df, y_type, g_fit, Q_fit){
   
   #--- generate W ---#
@@ -474,6 +475,41 @@ generate_uhal_data <- function(n = 500, df, y_type, g_fit, Q_fit){
   return(simu_data)
 }
 
+
+## SuperLearner
+generate_SL_data <- function(n = 500, df, y_type, g_fit, Q_fit){
+  
+  #--- generate W ---#
+  covars <- setdiff(names(df), c("A","Y"))
+  # simulate W from the empirical distribution of W in the real data
+  simu_data <- dplyr::sample_n(df, size = n, replace = TRUE)
+  
+  #--- generate A ---#
+  task_a_predict <- make_sl3_Task(data = simu_data, covariates = covars,
+                                  outcome = "A", outcome_type = 'binomial')
+  a_preds <- g_fit$predict(task_a_predict)
+  simu_data$A <- rbinom(n, 1, prob = a_preds)
+  
+  #--- generate Y ---#
+  task_y_predict <- make_sl3_Task(data = simu_data, covariates = c(covars, "A"),
+                                  outcome = "Y", outcome_type = y_type)
+  if (y_type == "continuous"){
+    y_preds <- Q_fit$predict(task_y_predict)
+    rv <- sum((y_preds - simu_data$Y)^2)/n
+    y_preds_error <- rnorm(n, mean = 0, sd = sqrt(rv))
+    y_preds <- y_preds + y_preds_error
+    simu_data$Y <- y_preds
+  }else{
+    simu_data$Y <- rbinom(n, 1, prob = y_preds)
+  }
+  return(simu_data)
+}
+
+
+
+
+
+## HAL Version
 fit_uhal_Qg <- function(df, y_type, covars){
   task_Q <- sl3_Task$new(
     data = df,
@@ -496,6 +532,7 @@ fit_uhal_Qg <- function(df, y_type, covars){
   return(res)
 }
 
+
 ## SuperLearner Version
 fit_SL_Qg <- function(df, y_type, covars){
   task_Q <- sl3_Task$new(
@@ -504,19 +541,33 @@ fit_SL_Qg <- function(df, y_type, covars){
     outcome = "Y",
     outcome_type = y_type
   )
-  Q_fit <- lrnr_uhal$train(task_Q)
+  lrn_glm <- Lrnr_glm$new()
+  lrn_mean <- Lrnr_mean$new()
+  lrn_RF <- Lrnr_randomForest$new()
+  lrn_glmnet <- Lrnr_glmnet$new()
   
+  stack <- Stack$new(
+    lrn_glm, lrn_mean, lrn_RF, lrn_glmnet
+  )
+
+  sl <- Lrnr_sl$new(learners = stack, metalearner = Lrnr_nnls$new())
+
+  Q_fit <- sl$train(task = task_Q)
+    
+
   task_g <- sl3_Task$new(
     data = df,
     covariates = covars,
     outcome = "A",
     outcome_type = "binomial"
   )
-  g_fit <- lrnr_uhal$train(task_g)
+
+
+  g_fit <- sl$train(task = task_g)
+  
   
   res <- list("Q_fit" = Q_fit,
               "g_fit" = g_fit)
   return(res)
 }
 
-### See below for fitting 

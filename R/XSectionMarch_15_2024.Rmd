@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-# Load packages
+# Load packages and functions
 
 ```{r}
 library(data.table)
@@ -24,106 +24,29 @@ library(tmle3)
 library(hal9001)
 
 rm(list = ls())
-source("uhal.R")
+source("uhal_Alan.R")
+source("SimSynFunctions_Alan.R")
 ```
 
 
-# Generate Original Data 
 
 
+# Initiate data, get true values
+As well as specs that do not change when new data is 
+simulated.
 ```{r}
-generate_data_simple <- function(N,Xranges=c(-1,1,-1,1),betaA=c(0,0.1,-0.4),
-                                 betaY0=c(0,1,2,-1),betaC=c(1,7/5,5,3),sdy=1){
-  # A simple data generating process
-  X1 <- runif(N,Xranges[1],Xranges[2])
-  X2 <- runif(N,Xranges[3],Xranges[4])
-  pi0 <- plogis(betaA[1]+betaA[2]*X1*X2+betaA[3]*X1)
-  A <- rbinom(N,1,prob=pi0)
-  muY0 <- betaY0[1]+betaY0[2]*X1*X2 + betaY0[3]*X2^2 +betaY0[4]*X1
-  CATE <- betaC[1]*X1^2*(X1+betaC[2]) + (betaC[3]*X2/betaC[4])^2
-  muY = muY0+A*CATE
-  Y <- rnorm(N,sd=sdy,mean= muY)
-  return(tibble(X1=X1,X2=X2,A=A,Y=Y))
-}
-
-# true ATE = 1.39
 set.seed(123)
 df <- generate_data_simple(N=500)
-```
-
-# Get True Values
-
-```{r}
-True_values <- function(N=100000,Xranges=c(-1,1,-1,1),betaA=c(0,0.1,-0.4),
-                                 betaY0=c(0,1,2,-1),betaC=c(1,7/5,5,3),sdy=1){
-  # A simple data generating process
-  X1 <- runif(N,Xranges[1],Xranges[2])
-  X2 <- runif(N,Xranges[3],Xranges[4])
-  pi0 <- plogis(betaA[1]+betaA[2]*X1*X2+betaA[3]*X1)
-  P0A = mean(pi0)
-  A <- rbinom(N,1,prob=pi0)
-  muY0 <- betaY0[1]+betaY0[2]*X1*X2 + betaY0[3]*X2^2 +betaY0[4]*X1
-  CATE <- betaC[1]*X1^2*(X1+betaC[2]) + (betaC[3]*X2/betaC[4])^2
-  true.ATE <- mean(CATE)
-  muY = muY0+A*CATE
-  Y <- rnorm(N,sd=sdy,mean= muY)
-  P0Y <- mean(Y)
-  coef.work <- coef(lm(Y~A+X1+X2))
-  return(list(P0A=P0A,P0Y=P0Y,true.ATE,coef.work))
-}
-psiP0 <- True_values()
-```
-
-
-# Generate Synthetic Data with undersmoothed HAL
-We also should try to use CV-HAL as we are trying to preserve not just functionals
-but the entire distribution
-
-```{r}
-node_list <- list(
+  node_list <- list(
   W = setdiff(names(df), c("A", "Y")),
   A = "A",
   Y = "Y"
 )
 
-lrnr_uhal <- Lrnr_uhal9001$new()
+# Get True Values
 
-res_Qg <- fit_uhal_Qg(df = df, 
-                      y_type = "continuous", 
-                      covars = node_list$W)
-
-set.seed(123)
-df_syn <- generate_uhal_data(n = nrow(df), 
-                             df = df, 
-                             y_type = "continuous", 
-                             g_fit = res_Qg$g_fit, 
-                             Q_fit = res_Qg$Q_fit)
-
-```
-
-# Get the estimates of simple parameters
-
-```{r}
-aveAn <- mean(df$A)
-aveAs <- mean(df_syn$A)
-aveYn <- mean(df$Y)
-aveYs <- mean(df_syn$Y)
-lmn <- lm(Y~A+X1+X2,data=df)
-lms <- lm(Y~A+X1+X2,data=df_syn)
-coeffn <- coef(lmn)
-coeffs <- coef(lms)
-seAn <- summary(lmn)$coefficients[2,2]
-seAs <- summary(lms)$coefficients[2,2]
-psiP0
-
-```
-
-
-
-
-# TMLE ATE on original data and synthetic data
-
-```{r}
+psiP0 <- True_values()
+## tmle3 and SL specs
 ate_spec <- tmle_ATE(
   treatment_level = 1,
   control_level = 0
@@ -149,21 +72,77 @@ sl_A <- Lrnr_sl$new(
   metalearner = lb_metalearner
 )
 learner_list <- list(A = sl_A, Y = sl_Y)
+
+# HAL spec  
+lrnr_uhal <- Lrnr_uhal9001$new()
+
 ```
+
+
+
+
+
+# Set up Sim
+## Specs for SL and HAL and TMLE 
+Can use within repeated simulations
+
+```{r}
+# B is number of simulations
+tmle.res <- NULL
+simp.res <- NULL
+
+B <- 10
+
+for(b in 1:B){
+  
+  cat(" b = ",b,"\n")
+  
+# Simulate Data
+df <- generate_data_simple(N=500)
+# Fit HAL Q and g
+res_Qg <- fit_uhal_Qg(df = df, 
+                      y_type = "continuous", 
+                      covars = node_list$W)
+# Fit SL Q and g
+res_Qg_SL <- fit_SL_Qg(df = df, 
+                      y_type = "continuous", 
+                      covars = node_list$W)
+
+# Get HAL-generated synthetic data
+df_syn <- generate_uhal_data(n = nrow(df), 
+                             df = df, 
+                             y_type = "continuous", 
+                             g_fit = res_Qg$g_fit, 
+                             Q_fit = res_Qg$Q_fit)
+
+# Get SL-generated synthetic data
+df_syn_SL <- generate_SL_data(n = nrow(df), 
+                             df = df, 
+                             y_type = "continuous", 
+                             g_fit = res_Qg$g_fit, 
+                             Q_fit = res_Qg$Q_fit)
+
+# Get the empirical estimates of simple parameters
+simple.df <- get.estimates(df)
+simple.df.hal <- get.estimates(df_syn)
+simple.df.SL <- get.estimates(df_syn_SL)
 
 
 # estimate ATE with original data
-```{r}
-
 tmle_fit_org <- tmle3(ate_spec, df, node_list, learner_list)
-print(tmle_fit_org)
-```
 
+# estimate ATE with synthetic HAL data
+tmle_fit_hal <- tmle3(ate_spec, df_syn, node_list, learner_list)
 
-# estimate ATE with synthetic data
-```{r}
-tmle_fit_syn <- tmle3(ate_spec, df_syn, node_list, learner_list)
-print(tmle_fit_syn)
+# estimate ATE with synthetic HAL data
+tmle_fit_SL <- tmle3(ate_spec, df_syn_SL, node_list, learner_list)
 
+# Consolidate into a output objects
+simp.res <- rbind(simp.res,c(simple.df$aver,simple.df.hal$aver,simple.df.SL$aver,simple.df$reg[,1],simple.df$reg[,2],simple.df.hal$reg[,1],simple.df.hal$reg[,2],simple.df.SL$reg[,1],simple.df.SL$reg[,2]))
+
+tmle.res <- rbind(tmle.res,c(tmle_fit_org$summary$tmle_est,tmle_fit_org$summary$se,tmle_fit_hal$summary$tmle_est,tmle_fit_hal$summary$se,tmle_fit_SL$summary$tmle_est,tmle_fit_SL$summary$se))
+
+}
+save.image("April7.rdata")
 ```
 
