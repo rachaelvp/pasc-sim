@@ -106,8 +106,8 @@ df_syn_cv <- generate_uhal_data(n = nrow(df),
 df_syn_SL <- generate_SL_data(n = nrow(df), 
                              df = df, 
                              y_type = "continuous", 
-                             g_fit = res_Qg$g_fit, 
-                             Q_fit = res_Qg$Q_fit)
+                             g_fit = res_Qg_SL$g_fit, 
+                             Q_fit = res_Qg_SL$Q_fit)
 
 # Get the empirical estimates of simple parameters
 simple.df <- get.estimates(df)
