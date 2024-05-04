@@ -213,8 +213,8 @@ rownames(res.bias) <- c("bias","var","MSE")
 # Re-arrange for plotting
 bias.plt <- res.bias[-c(3),]
 bias.plt[1,] <- (bias.plt[1,])^2
-estim <- c(rep("data",2),rep("hal",2),rep("SL",2))
-err <- rep(c("bias2","var"),3)
+estim <- c(rep("data",2),rep("hal.und",2),rep("hal.cv",2),rep("SL",2))
+err <- rep(c("bias2","var"),4)
 titl <- paste0("MSE and Squared Bias for 3 Estimators of P(A=1) = ",
                round(psiP0$P0A,2))
 plt.bias <- data.frame(Amount=as.vector(bias.plt),estim=estim,err=err)
@@ -227,8 +227,8 @@ rownames(res.biasY) <- c("bias","var","MSE")
 # Re-arrange for plotting
 bias.plt <- res.biasY[-c(3),]
 bias.plt[1,] <- (bias.plt[1,])^2
-estim <- c(rep("data",2),rep("hal",2),rep("SL",2))
-err <- rep(c("bias2","var"),3)
+estim <- c(rep("data",2),rep("hal.und",2),rep("hal.cv",2),rep("SL",2))
+err <- rep(c("bias2","var"),4)
 titl <- paste0("MSE and Squared Bias for 3 Estimators of E(Y) = ",
                round(psiP0$P0Y,2))
 plt.bias <- data.frame(Amount=as.vector(bias.plt),estim=estim,err=err)
@@ -236,14 +236,12 @@ plt.Y <- ggplot(plt.bias, aes(x = estim, y = Amount, fill = err)) +
   geom_bar(stat = "identity")+ggtitle(titl)
 
 # Regression coefficient on misspecified model for E(Y|A,X1,X2)
-regrA.est <- regrA[,c(1,3,5)]
+regrA.est <- regrA[,c(1,3,5,7)]
 res.bias.coeff <- apply(regrA.est,2,bias.var.MSE,tru=psiP0[[4]][2])
 rownames(res.bias.coeff) <- c("bias","var","MSE")
 
 bias.plt <- res.bias.coeff[-c(3),]
 bias.plt[1,] <- (bias.plt[1,])^2
-estim <- c(rep("data",2),rep("hal",2),rep("SL",2))
-err <- rep(c("bias2","var"),3)
 titl <- paste0("MSE and Squared Bias for 3 Estimators of A coeff = ",
                round(psiP0[[4]][2],2))
 plt.bias <- data.frame(Amount=as.vector(bias.plt),estim=estim,err=err)
@@ -255,7 +253,10 @@ covr <- mean(apply(regrA[,1:2],1,in.CI,tru=psiP0[[4]][2]))
 covr <- c(covr, mean(apply(regrA[,3:4],1,in.CI,tru=psiP0[[4]][2])))
 covr <- c(covr, mean(apply(regrA[,5:6],1,in.CI,tru=psiP0[[4]][2])))
 
-dat.cvr <- data.frame(estim = c("data","hal","SL"),coverage=covr)
+covr <- c(covr, mean(apply(regrA[,7:8],1,in.CI,tru=psiP0[[4]][2])))
+
+
+dat.cvr <- data.frame(estim = c("data","hal.und","hal.cv","SL"),coverage=covr)
 
 cutoff <- data.frame(yintercept=0.95, Lines='95 percent coverage')
 
@@ -264,14 +265,12 @@ plt.cvr <- ggplot(dat.cvr, aes(x = estim, y = coverage)) +
   geom_hline(aes(yintercept=yintercept, linetype=Lines), cutoff,linetype='dashed', color='red')
 
 ### tmle results
-tmle.est <- tmle.res[,c(1,3,5)]
+tmle.est <- tmle.res[,c(1,3,5,7)]
 res.bias.coeff <- apply(tmle.est,2,bias.var.MSE,tru=psiP0[[3]])
 rownames(res.bias.coeff) <- c("bias","var","MSE")
 
 bias.plt <- res.bias.coeff[-c(3),]
 bias.plt[1,] <- (bias.plt[1,])^2
-estim <- c(rep("data",2),rep("hal",2),rep("SL",2))
-err <- rep(c("bias2","var"),3)
 titl <- paste0("MSE and Squared Bias for 3 Estimators of ATE = ",
                round(psiP0[[3]],2))
 plt.bias <- data.frame(Amount=as.vector(bias.plt),estim=estim,err=err)
@@ -283,7 +282,10 @@ covr <- mean(apply(tmle.res[,1:2],1,in.CI,tru=psiP0[[3]]))
 covr <- c(covr, mean(apply(tmle.res[,3:4],1,in.CI,tru=psiP0[[3]])))
 covr <- c(covr, mean(apply(tmle.res[,5:6],1,in.CI,tru=psiP0[[3]])))
 
-dat.cvr <- data.frame(estim = c("data","hal","SL"),coverage=covr)
+covr <- c(covr, mean(apply(tmle.res[,7:8],1,in.CI,tru=psiP0[[3]])))
+
+
+dat.cvr <- data.frame(estim = c("data","hal.und","hal.cv","SL"),coverage=covr)
 
 cutoff <- data.frame(yintercept=0.95, Lines='95 percent coverage')
 
