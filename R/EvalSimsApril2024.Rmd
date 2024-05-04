@@ -157,14 +157,18 @@ _5. Evaluate the comparison of the distribution of synthetic data-based results 
   
 ```{r, echo=F, message=F,warning=F}
 ## Load simulation results
-load("April7.rdata")
+load("~/UC Berkeley Biostat Dropbox/Alan Hubbard/hubbardlap/grantproposals/ki Gates/Synthetic data supp/GitSynth/pasc-sim/R/April19.rdata")
+
 reg.nmes <- c("int","A","X1","X2")
 nmes <- c("ave.dat.A","ave.dat.Y","ave.hal.A",
-            "ave.hal.Y","ave.sl.A","ave.sl.Y",
+            "ave.hal.Y","ave.halcv.A",
+            "ave.halcv.Y","ave.sl.A","ave.sl.Y",
             paste0("regest.dat.",reg.nmes),
             paste0("regSE.dat.",reg.nmes),
             paste0("regest.hal.",reg.nmes),
             paste0("regSE.hal.",reg.nmes),
+            paste0("regest.halcv.",reg.nmes),
+            paste0("regSE.halcv.",reg.nmes),
             paste0("regest.sl.",reg.nmes),
             paste0("regSE.sl.",reg.nmes))
 
@@ -173,6 +177,7 @@ colnames(simp.res) <- nmes
 tnmes <- c("est.","se.")            
 colnames(tmle.res) <- c(paste0(tnmes,"dat"),
                         paste0(tnmes,"hal"),
+                        paste0(tnmes,"halcv"),
                         paste0(tnmes,"sl"))
 # True values psiP0<-list(P0A=P0A,P0Y=P0Y,true.ATE,coef.work)
 
@@ -182,11 +187,11 @@ colnames(tmle.res) <- c(paste0(tnmes,"dat"),
 
 ```{r, echo=F, message=F,warning=F}
 simp.res <- data.frame(simp.res)
-marginsA <- simp.res[,c(1,3,5)]
-marginsY <- simp.res[,c(2,4,6)]
+marginsA <- simp.res[,c(1,3,5,7)]
+marginsY <- simp.res[,c(2,4,6,8)]
 
 kp <- c("regest.dat.A","regSE.dat.A","regest.hal.A","regSE.hal.A",
-        "regest.sl.A","regSE.sl.A") 
+        "regest.halcv.A","regSE.halcv.A","regest.sl.A","regSE.sl.A") 
 
 regrA <- simp.res[,kp]
 
